@@ -209,6 +209,16 @@ function executeCommandAction(
           // Placeholder for sequence editing — args[0] = sequenceId, args[1] = edits
           break
 
+        case 'select': {
+          const ids = Array.isArray(args[0]) ? args[0] : [args[0]]
+          set({ selection: ids as string[] | number[] })
+          break
+        }
+
+        case 'clearSelection':
+          set({ selection: [] })
+          break
+
         default:
           throw new Error(`Unknown Data action: ${action}`)
       }

@@ -4,7 +4,7 @@
  * Reads state from store and updates camera smoothly via useFrame
  */
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, Sphere, Line } from '@react-three/drei'
 import * as THREE from 'three'
@@ -15,7 +15,8 @@ function SceneContent() {
   const currentData = useCommandStore((state) => state.currentData as any)
   const playheadPosition = useCommandStore((state) => state.playheadPosition)
   const selection = useCommandStore((state) => state.selection)
-  const { camera, gl } = useThree()
+  const executeCommand = useCommandStore((state) => state.executeCommand)
+  const { camera } = useThree()
 
   const sequences = currentData?.data?.sequences || []
   const sphereRef = useRef<THREE.Group>(null)
@@ -26,6 +27,7 @@ function SceneContent() {
   const frameTargetCenter = useRef(new THREE.Vector3())
   const frameTargetCamPos = useRef(new THREE.Vector3())
   const isInitialized = useRef(false)
+  const [isAltDown, setIsAltDown] = useState(false)
 
   // Calculate the current playhead position
   const currentIndex = Math.max(0, Math.round(playheadPosition) - 1)
@@ -38,10 +40,20 @@ function SceneContent() {
     let center = new THREE.Vector3()
     let boundingSphereRadius = 10
 
-    if (currentSequence) {
-      // Frame the current node
-      center.set(currentSequence.x, currentSequence.y, currentSequence.z)
-      boundingSphereRadius = 20 // Default zoom distance for a single node
+    if (selection && selection.length > 0) {
+      // Frame the selected nodes
+      const box = new THREE.Box3()
+      let count = 0
+      sequences.forEach((seq: any) => {
+        if (selection.includes(seq.id)) {
+          box.expandByPoint(new THREE.Vector3(seq.x, seq.y, seq.z))
+          count++
+        }
+      })
+      if (count > 0) {
+        box.getCenter(center)
+        boundingSphereRadius = count === 1 ? 20 : box.getBoundingSphere(new THREE.Sphere()).radius
+      }
     } else {
       // Frame entire scene
       const box = new THREE.Box3()
@@ -68,17 +80,25 @@ function SceneContent() {
     isFraming.current = true
   }
 
-  // Listen for 'f' key
+  // Listen for 'f' key and 'Alt' key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Alt') setIsAltDown(true)
       // Don't trigger if user is typing in an input
       if (e.key.toLowerCase() === 'f' && e.target instanceof Element && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
         frameSelection()
       }
     }
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Alt') setIsAltDown(false)
+    }
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [sequences, currentSequence])
+    window.addEventListener('keyup', handleKeyUp)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [sequences, currentSequence, selection])
 
   // Update sphere position immediately when sequence changes
   useEffect(() => {
@@ -119,8 +139,18 @@ function SceneContent() {
 
   return (
     <>
-      {/* Camera Controls */}
-      <OrbitControls ref={controlsRef} enableDamping dampingFactor={0.05} />
+      {/* Camera Controls - Maya style require Alt */}
+      <OrbitControls 
+        ref={controlsRef} 
+        enableDamping 
+        dampingFactor={0.05} 
+        enabled={isAltDown}
+        mouseButtons={{
+          LEFT: THREE.MOUSE.ROTATE,
+          MIDDLE: THREE.MOUSE.PAN,
+          RIGHT: THREE.MOUSE.DOLLY
+        }}
+      />
 
       {/* Lighting */}
       <ambientLight intensity={0.5} />
@@ -171,16 +201,23 @@ function SceneContent() {
       {/* Sequence Points (optional - show all positions as small dots) */}
       {sequences.map((seq: any, index: number) => {
         const isActive = index === currentIndex
+        const isSelected = selection?.includes(seq.id)
         return (
           <Sphere
             key={seq.id}
             args={[0.1, 8, 8]}
             position={[seq.x, seq.y, seq.z]}
+            onClick={(e) => {
+              e.stopPropagation()
+              // Select the node, wrap ID in quotes if it's a string, or just pass number
+              const idArg = typeof seq.id === 'string' ? `'${seq.id}'` : seq.id
+              executeCommand(`Data.select(${idArg})`)
+            }}
           >
             <meshBasicMaterial
-              color={isActive ? '#00ffff' : '#444444'}
+              color={isActive ? '#00ffff' : isSelected ? '#ff9f43' : '#444444'}
               transparent
-              opacity={isActive ? 1 : 0.3}
+              opacity={isActive || isSelected ? 1 : 0.3}
             />
           </Sphere>
         )
@@ -201,6 +238,12 @@ export default function Viewport3D() {
           camera={{ position: [0, 0, 50], fov: 50, near: 0.1, far: 10000 }}
           gl={{ antialias: true, alpha: true }}
           style={{ width: '100%', height: '100%' }}
+          onPointerMissed={() => {
+            const state = useCommandStore.getState()
+            if (state.selection && state.selection.length > 0) {
+              state.executeCommand('Data.clearSelection()')
+            }
+          }}
         >
           <SceneContent />
         </Canvas>
