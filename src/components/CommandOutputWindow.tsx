@@ -1,24 +1,55 @@
-/**
- * CommandOutputWindow Component (Legacy)
- * Preserved for backwards compatibility — replaced by AgentChatPanel in Dockview layout
- */
-
+import { useEffect, useRef } from 'react'
 import { useCommandStore } from '../store/useCommandStore'
 
 export default function CommandOutputWindow() {
   const historyLog = useCommandStore((state) => state.historyLog)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll to bottom when new logs arrive
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight
+    }
+  }, [historyLog])
 
   return (
-    <div className="command-output-window" style={{ background: '#111', borderTop: '1px solid #333', maxHeight: '200px', overflowY: 'auto', padding: '8px 12px' }}>
-      {historyLog.length === 0 ? (
-        <div style={{ color: '#575e72', fontSize: '11px' }}>No commands executed yet</div>
-      ) : (
-        historyLog.map((entry, i) => (
-          <div key={i} style={{ fontFamily: 'monospace', fontSize: '11px', color: entry.startsWith('[ERROR]') ? '#ff5e5e' : '#8891a5', padding: '2px 0' }}>
-            {entry}
-          </div>
-        ))
+    <div 
+      className="command-output-window" 
+      style={{ 
+        width: '100%', 
+        height: '100%', 
+        background: 'var(--bg-input)', 
+        color: '#8891a5', 
+        fontFamily: 'monospace', 
+        fontSize: '11px', 
+        padding: '8px', 
+        overflowY: 'auto' 
+      }}
+      ref={containerRef}
+    >
+      <div style={{ marginBottom: '8px', color: '#575e72', fontStyle: 'italic' }}>
+        // BaseCut NLE Script Editor Initialized...
+      </div>
+      
+      {historyLog.length === 0 && (
+        <div style={{ color: '#575e72' }}>No commands executed yet.</div>
       )}
+      
+      {historyLog.map((log, i) => {
+        const isError = log.startsWith('[ERROR]')
+        return (
+          <div 
+            key={i} 
+            style={{ 
+              color: isError ? '#ff5e5e' : '#4ceb9b',
+              marginBottom: '2px',
+              wordBreak: 'break-all'
+            }}
+          >
+            {isError ? log : `> ${log}`}
+          </div>
+        )
+      })}
     </div>
   )
 }

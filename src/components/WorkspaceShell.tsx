@@ -17,6 +17,7 @@ import OutlinerPanel from './OutlinerPanel'
 import Viewport3D from './Viewport3D'
 import TimelineScrubber from './TimelineScrubber'
 import AgentChatPanel from './AgentChatPanel'
+import CommandOutputWindow from './CommandOutputWindow'
 import { useCommandStore } from '../store/useCommandStore'
 
 /**
@@ -56,6 +57,14 @@ function AgentChatPanelWrapper(_props: IDockviewPanelProps) {
   )
 }
 
+function CommandOutputWindowWrapper(_props: IDockviewPanelProps) {
+  return (
+    <div className="panel-content output-panel" style={{ height: '100%', width: '100%' }}>
+      <CommandOutputWindow />
+    </div>
+  )
+}
+
 /**
  * Component registry for Dockview
  */
@@ -64,6 +73,7 @@ const components: Record<string, React.FunctionComponent<IDockviewPanelProps>> =
   viewport3d: Viewport3DPanelWrapper,
   timeline: TimelinePanelWrapper,
   agentchat: AgentChatPanelWrapper,
+  commandoutput: CommandOutputWindowWrapper,
 }
 
 export default function WorkspaceShell() {
@@ -129,6 +139,14 @@ export default function WorkspaceShell() {
       id: 'agentchat',
       component: 'agentchat',
       title: '🤖 Agent Chat',
+      position: { referencePanel: timelinePanel, direction: 'within' },
+    })
+
+    // 8. Add Script Editor Output Window
+    api.addPanel({
+      id: 'commandoutput',
+      component: 'commandoutput',
+      title: '📝 Output Log',
       position: { referencePanel: timelinePanel, direction: 'within' },
     })
   }, [])

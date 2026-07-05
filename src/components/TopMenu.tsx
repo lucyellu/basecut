@@ -118,6 +118,10 @@ const TopMenu = () => {
               if (dockviewApi) dockviewApi.addPanel({ id: `agentchat-${Date.now()}`, component: 'agentchat', title: '🤖 Agent Chat' })
               closeMenu()
             }}>Add Agent Chat</button>
+            <button className="dropdown-item" onClick={() => {
+              if (dockviewApi) dockviewApi.addPanel({ id: `commandoutput-${Date.now()}`, component: 'commandoutput', title: '📝 Output Log' })
+              closeMenu()
+            }}>Add Output Log</button>
             
             <div className="dropdown-divider"></div>
             
