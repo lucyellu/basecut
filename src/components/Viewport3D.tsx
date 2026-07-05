@@ -26,6 +26,7 @@ function SceneContent() {
   const isFraming = useRef(false)
   const frameTargetCenter = useRef(new THREE.Vector3())
   const frameTargetCamPos = useRef(new THREE.Vector3())
+  const frameTargetZoom = useRef(20)
   const isInitialized = useRef(false)
 
   // Calculate the current playhead position
@@ -66,15 +67,20 @@ function SceneContent() {
     // Set animation targets
     frameTargetCenter.current.copy(center)
     
-    // Offset camera slightly up and back based on the size of the object
-    const offset = new THREE.Vector3(0, 0, boundingSphereRadius * 1.5)
-    // Try to maintain the current camera angle if possible, otherwise use default offset
+    // Perspective offset (use 2.5x radius to comfortably fit inside FOV 50)
+    const fitDistance = Math.max(boundingSphereRadius * 2.5, 10)
     const currentDir = camera.position.clone().sub(controlsRef.current?.target || center).normalize()
+    
     if (currentDir.lengthSq() > 0.1) {
-      frameTargetCamPos.current.copy(center).add(currentDir.multiplyScalar(boundingSphereRadius * 1.5))
+      frameTargetCamPos.current.copy(center).add(currentDir.multiplyScalar(fitDistance))
     } else {
-      frameTargetCamPos.current.copy(center).add(offset)
+      frameTargetCamPos.current.copy(center).add(new THREE.Vector3(0, 0, fitDistance))
     }
+    
+    // Orthographic Zoom Target
+    // The screen size is approx min(width, height). We want bounding radius to fit.
+    const screenMin = Math.min(window.innerWidth, window.innerHeight)
+    frameTargetZoom.current = screenMin / (boundingSphereRadius * 2.5)
     
     isFraming.current = true
   }
@@ -112,10 +118,20 @@ function SceneContent() {
       const smoothFactor = 0.1
       camera.position.lerp(frameTargetCamPos.current, smoothFactor)
       controlsRef.current.target.lerp(frameTargetCenter.current, smoothFactor)
+      
+      if (camera.type === 'OrthographicCamera') {
+        // @ts-ignore - zoom exists on OrthographicCamera
+        camera.zoom += (frameTargetZoom.current - camera.zoom) * smoothFactor
+        camera.updateProjectionMatrix()
+      }
+      
       controlsRef.current.update()
 
-      // Stop framing when close enough
-      if (camera.position.distanceTo(frameTargetCamPos.current) < 0.5) {
+      // Stop framing when close enough (check zoom too for ortho)
+      const dist = camera.position.distanceTo(frameTargetCamPos.current)
+      const zoomDiff = camera.type === 'OrthographicCamera' ? Math.abs((camera as any).zoom - frameTargetZoom.current) : 0
+      
+      if (dist < 0.5 && zoomDiff < 0.1) {
         isFraming.current = false
       }
     }
@@ -136,7 +152,9 @@ function SceneContent() {
       <OrbitControls 
         ref={controlsRef} 
         enableDamping 
-        dampingFactor={0.05} 
+        dampingFactor={0.05}
+        zoomSpeed={2}
+        panSpeed={2}
         mouseButtons={{
           LEFT: THREE.MOUSE.ROTATE,
           MIDDLE: THREE.MOUSE.PAN,

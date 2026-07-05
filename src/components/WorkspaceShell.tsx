@@ -83,14 +83,36 @@ export default function WorkspaceShell() {
     // Clear existing layout
     api.clear()
 
-    // 1. Add Outliner panel
+    // 1. Add Timeline first (fills screen, will be pushed to bottom)
+    const timelinePanel = api.addPanel({
+      id: 'timeline',
+      component: 'timeline',
+      title: '▶ Timeline',
+    })
+
+    // 2. Add AgentChat and Output Log into Timeline group
+    api.addPanel({
+      id: 'agentchat',
+      component: 'agentchat',
+      title: '🤖 Agent Chat',
+      position: { referencePanel: timelinePanel, direction: 'within' },
+    })
+    api.addPanel({
+      id: 'commandoutput',
+      component: 'commandoutput',
+      title: '📝 Output Log',
+      position: { referencePanel: timelinePanel, direction: 'within' },
+    })
+
+    // 3. Add Outliner above Timeline (Timeline becomes bottom half)
     const outlinerPanel = api.addPanel({
       id: 'outliner',
       component: 'outliner',
       title: '⊞ Outliner',
+      position: { referencePanel: timelinePanel, direction: 'above' },
     })
 
-    // 2. Add Top Viewport
+    // 4. Add Top Viewport to the right of Outliner (splits top half horizontally)
     const viewportTop = api.addPanel({
       id: 'viewport-top',
       component: 'viewport3d',
@@ -99,16 +121,7 @@ export default function WorkspaceShell() {
       position: { referencePanel: outlinerPanel, direction: 'right' },
     })
 
-    // 3. Add Front Viewport
-    const viewportFront = api.addPanel({
-      id: 'viewport-front',
-      component: 'viewport3d',
-      title: '🎥 Front View',
-      params: { viewType: 'front' },
-      position: { referencePanel: viewportTop, direction: 'below' },
-    })
-
-    // 4. Add Side Viewport
+    // 5. Add Side Viewport to the right of Top Viewport (splits viewports area into two columns)
     const viewportSide = api.addPanel({
       id: 'viewport-side',
       component: 'viewport3d',
@@ -117,37 +130,22 @@ export default function WorkspaceShell() {
       position: { referencePanel: viewportTop, direction: 'right' },
     })
 
-    // 5. Add Perspective Viewport
+    // 6. Add Front Viewport below Top Viewport (splits left viewport column vertically)
+    api.addPanel({
+      id: 'viewport-front',
+      component: 'viewport3d',
+      title: '🎥 Front View',
+      params: { viewType: 'front' },
+      position: { referencePanel: viewportTop, direction: 'below' },
+    })
+
+    // 7. Add Perspective Viewport below Side Viewport (splits right viewport column vertically)
     api.addPanel({
       id: 'viewport-persp',
       component: 'viewport3d',
       title: '🧬 Perspective',
       params: { viewType: 'persp' },
       position: { referencePanel: viewportSide, direction: 'below' },
-    })
-
-    // 6. Add Timeline panel
-    const timelinePanel = api.addPanel({
-      id: 'timeline',
-      component: 'timeline',
-      title: '▶ Timeline',
-      position: { referencePanel: viewportFront, direction: 'below' },
-    })
-
-    // 7. Add AgentChat
-    api.addPanel({
-      id: 'agentchat',
-      component: 'agentchat',
-      title: '🤖 Agent Chat',
-      position: { referencePanel: timelinePanel, direction: 'within' },
-    })
-
-    // 8. Add Script Editor Output Window
-    api.addPanel({
-      id: 'commandoutput',
-      component: 'commandoutput',
-      title: '📝 Output Log',
-      position: { referencePanel: timelinePanel, direction: 'within' },
     })
   }, [])
 
