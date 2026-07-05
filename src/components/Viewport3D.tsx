@@ -4,7 +4,7 @@
  * Reads state from store and updates camera smoothly via useFrame
  */
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, Sphere, Line } from '@react-three/drei'
 import * as THREE from 'three'
@@ -27,7 +27,6 @@ function SceneContent() {
   const frameTargetCenter = useRef(new THREE.Vector3())
   const frameTargetCamPos = useRef(new THREE.Vector3())
   const isInitialized = useRef(false)
-  const [isAltDown, setIsAltDown] = useState(false)
 
   // Calculate the current playhead position
   const currentIndex = Math.max(0, Math.round(playheadPosition) - 1)
@@ -80,23 +79,17 @@ function SceneContent() {
     isFraming.current = true
   }
 
-  // Listen for 'f' key and 'Alt' key
+  // Listen for 'f' key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Alt') setIsAltDown(true)
       // Don't trigger if user is typing in an input
       if (e.key.toLowerCase() === 'f' && e.target instanceof Element && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
         frameSelection()
       }
     }
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Alt') setIsAltDown(false)
-    }
     window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
     }
   }, [sequences, currentSequence, selection])
 
@@ -139,12 +132,11 @@ function SceneContent() {
 
   return (
     <>
-      {/* Camera Controls - Maya style require Alt */}
+      {/* Camera Controls - Maya style buttons but no Alt required */}
       <OrbitControls 
         ref={controlsRef} 
         enableDamping 
         dampingFactor={0.05} 
-        enabled={isAltDown}
         mouseButtons={{
           LEFT: THREE.MOUSE.ROTATE,
           MIDDLE: THREE.MOUSE.PAN,
@@ -207,7 +199,7 @@ function SceneContent() {
             key={seq.id}
             args={[0.1, 8, 8]}
             position={[seq.x, seq.y, seq.z]}
-            onClick={(e) => {
+            onDoubleClick={(e) => {
               e.stopPropagation()
               // Select the node, wrap ID in quotes if it's a string, or just pass number
               const idArg = typeof seq.id === 'string' ? `'${seq.id}'` : seq.id
@@ -226,16 +218,22 @@ function SceneContent() {
   )
 }
 
+import { OrthographicCamera, PerspectiveCamera } from '@react-three/drei'
+
 // Main Viewport3D component
-export default function Viewport3D() {
+export default function Viewport3D({ viewType = 'persp' }: { viewType?: 'top' | 'front' | 'side' | 'persp' }) {
   const currentData = useCommandStore((state) => state.currentData as any)
   const sequences = currentData?.data?.sequences || []
 
   return (
-    <div className="viewport-3d">
+    <div className="viewport-3d" style={{ position: 'relative' }}>
+      {/* Viewport Label */}
+      <div style={{ position: 'absolute', top: 8, left: 8, color: '#fff', fontSize: 12, background: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: 4, zIndex: 10, textTransform: 'capitalize' }}>
+        {viewType} View
+      </div>
+      
       {sequences.length > 0 ? (
         <Canvas
-          camera={{ position: [0, 0, 50], fov: 50, near: 0.1, far: 10000 }}
           gl={{ antialias: true, alpha: true }}
           style={{ width: '100%', height: '100%' }}
           onPointerMissed={() => {
@@ -245,6 +243,10 @@ export default function Viewport3D() {
             }
           }}
         >
+          {viewType === 'persp' && <PerspectiveCamera makeDefault position={[50, 50, 50]} fov={50} near={0.1} far={10000} />}
+          {viewType === 'top' && <OrthographicCamera makeDefault position={[0, 100, 0]} zoom={20} near={0.1} far={10000} />}
+          {viewType === 'front' && <OrthographicCamera makeDefault position={[0, 0, 100]} zoom={20} near={0.1} far={10000} />}
+          {viewType === 'side' && <OrthographicCamera makeDefault position={[100, 0, 0]} zoom={20} near={0.1} far={10000} />}
           <SceneContent />
         </Canvas>
       ) : (

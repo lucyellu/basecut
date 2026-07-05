@@ -29,10 +29,11 @@ function OutlinerPanelWrapper(_props: IDockviewPanelProps) {
   )
 }
 
-function Viewport3DPanelWrapper(_props: IDockviewPanelProps) {
+function Viewport3DPanelWrapper(props: IDockviewPanelProps) {
+  const viewType = props.params?.viewType as 'top' | 'front' | 'side' | 'persp' | undefined;
   return (
     <div className="panel-content viewport-panel">
-      <Viewport3D />
+      <Viewport3D viewType={viewType} />
     </div>
   )
 }
@@ -78,29 +79,66 @@ export default function WorkspaceShell() {
       title: '⊞ Outliner',
     })
 
-    // 2. Add Viewport3D panel to the right of Outliner
-    const viewportPanel = api.addPanel({
-      id: 'viewport3d',
+    // 2. Add Top Viewport panel to the right of Outliner
+    const viewportTop = api.addPanel({
+      id: 'viewport-top',
       component: 'viewport3d',
-      title: '🧬 3D Viewport',
+      title: '🎥 Top View',
+      params: { viewType: 'top' },
       position: {
         referencePanel: outlinerPanel,
         direction: 'right',
       },
     })
 
-    // 3. Add Timeline panel below the Viewport
+    // 3. Add Front Viewport panel below Top Viewport
+    const viewportFront = api.addPanel({
+      id: 'viewport-front',
+      component: 'viewport3d',
+      title: '🎥 Front View',
+      params: { viewType: 'front' },
+      position: {
+        referencePanel: viewportTop,
+        direction: 'below',
+      },
+    })
+
+    // 4. Add Side Viewport panel to the right of Top Viewport
+    const viewportSide = api.addPanel({
+      id: 'viewport-side',
+      component: 'viewport3d',
+      title: '🎥 Side View',
+      params: { viewType: 'side' },
+      position: {
+        referencePanel: viewportTop,
+        direction: 'right',
+      },
+    })
+
+    // 5. Add Perspective Viewport panel below Side Viewport
+    api.addPanel({
+      id: 'viewport-persp',
+      component: 'viewport3d',
+      title: '🧬 Perspective',
+      params: { viewType: 'persp' },
+      position: {
+        referencePanel: viewportSide,
+        direction: 'below',
+      },
+    })
+
+    // 6. Add Timeline panel below all viewports
     const timelinePanel = api.addPanel({
       id: 'timeline',
       component: 'timeline',
       title: '▶ Timeline',
       position: {
-        referencePanel: viewportPanel,
+        referencePanel: viewportFront, // roughly positions it at the bottom
         direction: 'below',
       },
     })
 
-    // 4. Add AgentChat as a tab in the same group as Timeline
+    // 7. Add AgentChat as a tab in the same group as Timeline
     api.addPanel({
       id: 'agentchat',
       component: 'agentchat',
