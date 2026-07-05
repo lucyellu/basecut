@@ -6,6 +6,7 @@
 import { useCommandStore } from './store/useCommandStore'
 import CommandInputBar from './components/CommandInputBar'
 import CommandOutputWindow from './components/CommandOutputWindow'
+import DataPanel from './components/DataPanel'
 
 function App() {
   // Subscribe to specific state slices for optimal re-renders
@@ -90,6 +91,9 @@ function App() {
             </p>
           </div>
         </div>
+
+        {/* Data Panel */}
+        <DataPanel />
 
         {/* Quick Commands */}
         <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg p-6 mb-4">

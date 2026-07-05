@@ -6,6 +6,7 @@
 
 import { create } from 'zustand'
 import type { CommandStore, ParsedCommand, CommandDomain } from '../types/command.types'
+import type { BioData, LoadedDataInfo } from '../types/data.types'
 
 /**
  * Strict domain whitelist for command validation
@@ -150,18 +151,62 @@ function executeCommandAction(
       switch (action) {
         case 'load':
           const filename = args[0] as string
-          // Mock data loading - in real app would fetch from file
-          set({
-            currentData: {
-              filename,
-              loadedAt: new Date().toISOString(),
-              mockData: true
-            }
-          })
+          // In real app, would fetch from API or file system
+          // For now, load from root (Vite serves public/ at root)
+          fetch(`/${filename}`)
+            .then(response => response.json())
+            .then(data => {
+              set({
+                currentData: {
+                  filename,
+                  loadedAt: new Date().toISOString(),
+                  sequenceCount: data.sequences?.length || 0,
+                  cameraCount: data.cameras?.length || 0,
+                  data
+                } as LoadedDataInfo
+              })
+            })
+            .catch(error => {
+              set({ lastError: `Failed to load data: ${error.message}` })
+            })
+          break
+
+        case 'loadBioData':
+          // Specific command to load the bio-sequence data
+          const bioFilename = args[0] as string || 'bio-data-2026-07-05.json'
+          fetch(`/${bioFilename}`)
+            .then(response => {
+              if (!response.ok) throw new Error(`HTTP ${response.status}`)
+              return response.json()
+            })
+            .then(data => {
+              const loadedData: LoadedDataInfo = {
+                filename: bioFilename,
+                loadedAt: new Date().toISOString(),
+                sequenceCount: data.sequences?.length || 0,
+                cameraCount: data.cameras?.length || 0,
+                data
+              }
+              set({ currentData: loadedData })
+              // Also update playhead to match data
+              if (data.currentPlayheadIndex !== undefined) {
+                set({ playheadPosition: data.currentPlayheadIndex })
+              }
+            })
+            .catch(error => {
+              set({ lastError: `Failed to load bio-data: ${error.message}` })
+            })
           break
 
         case 'clear':
           set({ currentData: null })
+          break
+
+        case 'editSequence':
+          // Edit a specific sequence
+          const sequenceId = args[0] as number
+          const edits = args[1] as Partial<BioSequence>
+          // In real app, would update specific sequence
           break
 
         default:
