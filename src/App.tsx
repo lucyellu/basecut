@@ -30,8 +30,8 @@ function App() {
         </div>
       </header>
 
-      {/* Main Content - Scrollable independently */}
-      <main className="container mx-auto px-6 py-8 flex-1 overflow-y-auto">
+      {/* Main Content Panel - Scrollable independently */}
+      <main className="container mx-auto px-6 py-8 overflow-y-auto">
         {/* Status Display */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {/* Playhead Position */}

@@ -28,8 +28,9 @@ export default function CommandOutputWindow() {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing.current) return
 
-      const newHeight = window.innerHeight - e.clientY
-      if (newHeight >= 100 && newHeight <= 500) {
+      // Calculate new height based on mouse position relative to window bottom
+      const newHeight = window.innerHeight - e.clientY - 48 // 48px is input bar height
+      if (newHeight >= 100 && newHeight <= 600) {
         setOutputWindowHeight(newHeight)
       }
     }
@@ -59,7 +60,7 @@ export default function CommandOutputWindow() {
 
   return (
     <div
-      className="output-window fixed bottom-12 left-0 right-0 bg-gray-900 border-t border-gray-700 flex flex-col"
+      className="output-window bg-gray-900 border-t border-gray-700 flex flex-col flex-shrink-0"
       style={{ height: `${outputWindowHeight}px` }}
     >
       {/* Header with Resize Handle */}

@@ -32,7 +32,7 @@ export default function CommandInputBar() {
   }
 
   return (
-    <div className="command-input-bar fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700">
+    <div className="command-input-bar bg-gray-900 border-t border-gray-700 flex-shrink-0">
       {/* Error Display */}
       {lastError && (
         <div className="error-banner px-4 py-1 bg-red-900/30 border-b border-red-700">
