@@ -40,13 +40,13 @@
   --border-active: #3d4560;
 
   /* Sizing */
-  --header-height: 38px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
+  --header-height: 24px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
 
   /* Shadows */
-  --shadow-panel: 0 2px 12px rgba(0, 0, 0, 0.4);
+  --shadow-panel: 0 1px 6px rgba(0, 0, 0, 0.4);
   --shadow-glow-cyan: 0 0 12px rgba(0, 229, 255, 0.25);
 }
 
@@ -66,7 +66,7 @@ html, body, #root {
   background: var(--bg-app);
   color: var(--text-primary);
   font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 13px;
+  font-size: 11px;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -102,7 +102,7 @@ html, body, #root {
   align-items: center;
   justify-content: space-between;
   height: var(--header-height);
-  padding: 0 14px;
+  padding: 0 8px;
   background: linear-gradient(180deg, #1a1e2e 0%, #14171f 100%);
   border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
@@ -116,7 +116,7 @@ html, body, #root {
 }
 
 .header-title {
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.5px;
   background: linear-gradient(135deg, var(--accent-cyan), var(--accent-primary));
@@ -127,8 +127,8 @@ html, body, #root {
 
 .header-subtitle {
   font-size: 11px;
-  color: var(--text-muted);
-  font-weight: 400;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .header-right {
@@ -139,8 +139,8 @@ html, body, #root {
 
 .header-badge {
   font-size: 10px;
-  padding: 2px 8px;
-  background: var(--bg-surface);
+  padding: 2px 6px;
+  background: rgba(108, 140, 255, 0.15);
   border: 1px solid var(--border-color);
   border-radius: 10px;
   color: var(--text-muted);
@@ -818,7 +818,7 @@ html, body, #root {
   padding: 0 8px;
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border-color);
-  height: 28px;
+  height: 24px;
   flex-shrink: 0;
   z-index: 200;
   position: relative;
@@ -832,8 +832,8 @@ html, body, #root {
   background: transparent;
   border: none;
   color: var(--text-primary);
-  font-size: 12px;
-  padding: 4px 10px;
+  font-size: 11px;
+  padding: 2px 8px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background 0.1s;
@@ -862,8 +862,8 @@ html, body, #root {
   background: transparent;
   border: none;
   color: var(--text-primary);
-  font-size: 12px;
-  padding: 6px 16px;
+  font-size: 11px;
+  padding: 4px 12px;
   text-align: left;
   cursor: pointer;
   transition: background 0.1s;

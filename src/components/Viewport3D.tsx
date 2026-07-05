@@ -199,11 +199,14 @@ function SceneContent() {
             key={seq.id}
             args={[0.1, 8, 8]}
             position={[seq.x, seq.y, seq.z]}
-            onDoubleClick={(e) => {
-              e.stopPropagation()
-              // Select the node, wrap ID in quotes if it's a string, or just pass number
-              const idArg = typeof seq.id === 'string' ? `'${seq.id}'` : seq.id
-              executeCommand(`Data.select(${idArg})`)
+            onClick={(e) => {
+              // Only trigger if mouse delta is small (i.e. not dragging)
+              if (e.delta <= 2) {
+                e.stopPropagation()
+                // Select the node, wrap ID in quotes if it's a string, or just pass number
+                const idArg = typeof seq.id === 'string' ? `'${seq.id}'` : seq.id
+                executeCommand(`Data.select(${idArg})`)
+              }
             }}
           >
             <meshBasicMaterial
@@ -219,17 +222,37 @@ function SceneContent() {
 }
 
 import { OrthographicCamera, PerspectiveCamera } from '@react-three/drei'
+import { useState } from 'react'
 
 // Main Viewport3D component
 export default function Viewport3D({ viewType = 'persp' }: { viewType?: 'top' | 'front' | 'side' | 'persp' }) {
   const currentData = useCommandStore((state) => state.currentData as any)
   const sequences = currentData?.data?.sequences || []
+  const [currentView, setCurrentView] = useState(viewType)
 
   return (
-    <div className="viewport-3d" style={{ position: 'relative' }}>
-      {/* Viewport Label */}
-      <div style={{ position: 'absolute', top: 8, left: 8, color: '#fff', fontSize: 12, background: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: 4, zIndex: 10, textTransform: 'capitalize' }}>
-        {viewType} View
+    <div className="viewport-3d" style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {/* Viewport Dropdown */}
+      <div style={{ position: 'absolute', top: 4, left: 4, zIndex: 10 }}>
+        <select 
+          value={currentView}
+          onChange={(e) => setCurrentView(e.target.value as any)}
+          style={{ 
+            background: 'rgba(22, 25, 35, 0.8)', 
+            color: '#fff', 
+            border: '1px solid #282d3f', 
+            borderRadius: '4px',
+            fontSize: '11px',
+            padding: '2px 4px',
+            outline: 'none',
+            cursor: 'pointer'
+          }}
+        >
+          <option value="persp">Perspective</option>
+          <option value="top">Top View</option>
+          <option value="front">Front View</option>
+          <option value="side">Side View</option>
+        </select>
       </div>
       
       {sequences.length > 0 ? (
@@ -243,10 +266,10 @@ export default function Viewport3D({ viewType = 'persp' }: { viewType?: 'top' | 
             }
           }}
         >
-          {viewType === 'persp' && <PerspectiveCamera makeDefault position={[50, 50, 50]} fov={50} near={0.1} far={10000} />}
-          {viewType === 'top' && <OrthographicCamera makeDefault position={[0, 100, 0]} zoom={20} near={0.1} far={10000} />}
-          {viewType === 'front' && <OrthographicCamera makeDefault position={[0, 0, 100]} zoom={20} near={0.1} far={10000} />}
-          {viewType === 'side' && <OrthographicCamera makeDefault position={[100, 0, 0]} zoom={20} near={0.1} far={10000} />}
+          {currentView === 'persp' && <PerspectiveCamera makeDefault position={[50, 50, 50]} fov={50} near={0.1} far={10000} />}
+          {currentView === 'top' && <OrthographicCamera makeDefault position={[0, 100, 0]} zoom={20} near={0.1} far={10000} />}
+          {currentView === 'front' && <OrthographicCamera makeDefault position={[0, 0, 100]} zoom={20} near={0.1} far={10000} />}
+          {currentView === 'side' && <OrthographicCamera makeDefault position={[100, 0, 0]} zoom={20} near={0.1} far={10000} />}
           <SceneContent />
         </Canvas>
       ) : (

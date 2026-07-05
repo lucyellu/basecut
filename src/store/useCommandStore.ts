@@ -249,19 +249,19 @@ function executeCommandAction(
   }
 }
 
-/**
- * Create the Zustand store with command pattern architecture
- */
 export const useCommandStore = create<CommandStore>((set, get) => ({
   // Initial state
   playheadPosition: 0,
   currentData: null,
   isPlaying: false,
-  selection: [],
+  selection: null,
+  dockviewApi: null,
   historyLog: [],
   parsedHistory: [],
   lastError: null,
   commandCount: 0,
+
+  setDockviewApi: (api) => set({ dockviewApi: api }),
 
   /**
    * CORE FUNCTION: Execute a command string

@@ -28,7 +28,9 @@ export interface CommandState {
   playheadPosition: number
   currentData: any | null
   isPlaying: boolean
-  selection: any[]
+  selection: any[] | null
+  dockviewApi: any | null
+  setDockviewApi: (api: any) => void
 
   // Command history
   historyLog: string[]              // Raw command strings

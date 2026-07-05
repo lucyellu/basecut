@@ -4,11 +4,12 @@
  * Registers 4 panels: Outliner, Viewport3D, Timeline, AgentChat
  */
 
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import {
   DockviewReact,
   DockviewReadyEvent,
   IDockviewPanelProps,
+  DockviewApi
 } from 'dockview-react'
 import 'dockview-react/dist/styles/dockview.css'
 
@@ -16,6 +17,7 @@ import OutlinerPanel from './OutlinerPanel'
 import Viewport3D from './Viewport3D'
 import TimelineScrubber from './TimelineScrubber'
 import AgentChatPanel from './AgentChatPanel'
+import { useCommandStore } from '../store/useCommandStore'
 
 /**
  * Panel wrapper components for Dockview registry
@@ -65,93 +67,86 @@ const components: Record<string, React.FunctionComponent<IDockviewPanelProps>> =
 }
 
 export default function WorkspaceShell() {
-  /**
-   * Build the initial 4-panel layout when Dockview is ready
-   * Layout: Outliner (left 20%) | Viewport3D (top right 70%) / Timeline+Chat (bottom right 30%)
-   */
-  const onReady = useCallback((event: DockviewReadyEvent) => {
-    const api = event.api
+  const setDockviewApi = useCommandStore(state => state.setDockviewApi)
 
-    // 1. Add Outliner panel (will be the initial leftmost panel)
+  const buildDefaultLayout = useCallback((api: DockviewApi) => {
+    // Clear existing layout
+    api.clear()
+
+    // 1. Add Outliner panel
     const outlinerPanel = api.addPanel({
       id: 'outliner',
       component: 'outliner',
       title: '⊞ Outliner',
     })
 
-    // 2. Add Top Viewport panel to the right of Outliner
+    // 2. Add Top Viewport
     const viewportTop = api.addPanel({
       id: 'viewport-top',
       component: 'viewport3d',
       title: '🎥 Top View',
       params: { viewType: 'top' },
-      position: {
-        referencePanel: outlinerPanel,
-        direction: 'right',
-      },
+      position: { referencePanel: outlinerPanel, direction: 'right' },
     })
 
-    // 3. Add Front Viewport panel below Top Viewport
+    // 3. Add Front Viewport
     const viewportFront = api.addPanel({
       id: 'viewport-front',
       component: 'viewport3d',
       title: '🎥 Front View',
       params: { viewType: 'front' },
-      position: {
-        referencePanel: viewportTop,
-        direction: 'below',
-      },
+      position: { referencePanel: viewportTop, direction: 'below' },
     })
 
-    // 4. Add Side Viewport panel to the right of Top Viewport
+    // 4. Add Side Viewport
     const viewportSide = api.addPanel({
       id: 'viewport-side',
       component: 'viewport3d',
       title: '🎥 Side View',
       params: { viewType: 'side' },
-      position: {
-        referencePanel: viewportTop,
-        direction: 'right',
-      },
+      position: { referencePanel: viewportTop, direction: 'right' },
     })
 
-    // 5. Add Perspective Viewport panel below Side Viewport
+    // 5. Add Perspective Viewport
     api.addPanel({
       id: 'viewport-persp',
       component: 'viewport3d',
       title: '🧬 Perspective',
       params: { viewType: 'persp' },
-      position: {
-        referencePanel: viewportSide,
-        direction: 'below',
-      },
+      position: { referencePanel: viewportSide, direction: 'below' },
     })
 
-    // 6. Add Timeline panel below all viewports
+    // 6. Add Timeline panel
     const timelinePanel = api.addPanel({
       id: 'timeline',
       component: 'timeline',
       title: '▶ Timeline',
-      position: {
-        referencePanel: viewportFront, // roughly positions it at the bottom
-        direction: 'below',
-      },
+      position: { referencePanel: viewportFront, direction: 'below' },
     })
 
-    // 7. Add AgentChat as a tab in the same group as Timeline
+    // 7. Add AgentChat
     api.addPanel({
       id: 'agentchat',
       component: 'agentchat',
       title: '🤖 Agent Chat',
-      position: {
-        referencePanel: timelinePanel,
-        direction: 'within',
-      },
+      position: { referencePanel: timelinePanel, direction: 'within' },
     })
-
-    // Dockview handles proportional sizing automatically based on panel order.
-    // The initial layout proportions are approximated by the directional placement.
   }, [])
+
+  const onReady = useCallback((event: DockviewReadyEvent) => {
+    const api = event.api
+    setDockviewApi(api)
+    buildDefaultLayout(api)
+  }, [buildDefaultLayout, setDockviewApi])
+
+  useEffect(() => {
+    const handleReset = () => {
+      const api = useCommandStore.getState().dockviewApi
+      if (api) buildDefaultLayout(api)
+    }
+    window.addEventListener('reset-workspace-layout', handleReset)
+    return () => window.removeEventListener('reset-workspace-layout', handleReset)
+  }, [buildDefaultLayout])
 
   return (
     <div className="workspace-shell">

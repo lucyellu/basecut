@@ -4,6 +4,7 @@ import { useCommandStore } from '../store/useCommandStore';
 const TopMenu = () => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const executeCommand = useCommandStore(state => state.executeCommand);
+  const dockviewApi = useCommandStore(state => state.dockviewApi);
 
   const toggleMenu = (menuName: string) => {
     setActiveMenu(activeMenu === menuName ? null : menuName);
@@ -86,6 +87,51 @@ const TopMenu = () => {
 
       <div className="menu-item-container">
         <button 
+          className={`menu-button ${activeMenu === 'window' ? 'active' : ''}`}
+          onClick={() => toggleMenu('window')}
+        >
+          Window
+        </button>
+        {activeMenu === 'window' && (
+          <div className="dropdown-menu">
+            <button className="dropdown-item" onClick={() => {
+              if (dockviewApi) {
+                dockviewApi.addPanel({ id: `viewport-persp-${Date.now()}`, component: 'viewport3d', title: '🧬 Perspective', params: { viewType: 'persp' } })
+              }
+              closeMenu()
+            }}>Add Perspective View</button>
+            <button className="dropdown-item" onClick={() => {
+              if (dockviewApi) {
+                dockviewApi.addPanel({ id: `viewport-top-${Date.now()}`, component: 'viewport3d', title: '🎥 Top View', params: { viewType: 'top' } })
+              }
+              closeMenu()
+            }}>Add Top View</button>
+            <button className="dropdown-item" onClick={() => {
+              if (dockviewApi) dockviewApi.addPanel({ id: `outliner-${Date.now()}`, component: 'outliner', title: '⊞ Outliner' })
+              closeMenu()
+            }}>Add Outliner</button>
+            <button className="dropdown-item" onClick={() => {
+              if (dockviewApi) dockviewApi.addPanel({ id: `timeline-${Date.now()}`, component: 'timeline', title: '▶ Timeline' })
+              closeMenu()
+            }}>Add Timeline</button>
+            <button className="dropdown-item" onClick={() => {
+              if (dockviewApi) dockviewApi.addPanel({ id: `agentchat-${Date.now()}`, component: 'agentchat', title: '🤖 Agent Chat' })
+              closeMenu()
+            }}>Add Agent Chat</button>
+            
+            <div className="dropdown-divider"></div>
+            
+            <button className="dropdown-item" onClick={() => {
+              // Trigger a reset by dispatching a custom event that WorkspaceShell listens to
+              window.dispatchEvent(new CustomEvent('reset-workspace-layout'))
+              closeMenu()
+            }}>Reset Layout (4-Split)</button>
+          </div>
+        )}
+      </div>
+
+      <div className="menu-item-container">
+        <button 
           className={`menu-button ${activeMenu === 'help' ? 'active' : ''}`}
           onClick={() => toggleMenu('help')}
         >
@@ -93,7 +139,7 @@ const TopMenu = () => {
         </button>
         {activeMenu === 'help' && (
           <div className="dropdown-menu">
-            <button className="dropdown-item" onClick={() => alert('BaseCut NLE - AI-Native Command Engine\n\nMaya Controls: Alt+Left to Orbit, Alt+Mid to Pan, Alt+Right to Zoom.\nPress F to Frame Selection.')}>About BaseCut</button>
+            <button className="dropdown-item" onClick={() => alert('BaseCut NLE - AI-Native Command Engine\n\nControls: Left to Orbit, Mid to Pan, Right to Zoom.\nPress F to Frame Selection.')}>About BaseCut</button>
           </div>
         )}
       </div>
