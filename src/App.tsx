@@ -158,29 +158,6 @@ function App() {
           </div>
         </div>
 
-        {/* Recent Commands */}
-        {historyLog.length > 0 && (
-          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg p-6">
-            <h2 className="text-xl font-bold text-white mb-4">
-              Recent Commands
-            </h2>
-            <div className="space-y-2">
-              {historyLog.slice(-5).reverse().map((command, index) => {
-                const isError = command.startsWith('[ERROR]')
-                return (
-                  <div
-                    key={index}
-                    className={`text-sm font-mono ${
-                      isError ? 'text-red-400' : 'text-green-400'
-                    }`}
-                  >
-                    {isError ? command : `❯ ${command}`}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
       </main>
 
       {/* Command Output Window (Collapsible) */}
