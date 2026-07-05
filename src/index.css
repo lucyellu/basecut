@@ -808,76 +808,74 @@ html, body, #root {
   transition: none !important;
 }
 
- / *   = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
-       T o p   M e n u   B a r 
-       = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =   * / 
- . t o p - m e n u - b a r   { 
-     d i s p l a y :   f l e x ; 
-     a l i g n - i t e m s :   c e n t e r ; 
-     g a p :   4 p x ; 
-     p a d d i n g :   0   8 p x ; 
-     b a c k g r o u n d :   v a r ( - - b g - p a n e l ) ; 
-     b o r d e r - b o t t o m :   1 p x   s o l i d   v a r ( - - b o r d e r - c o l o r ) ; 
-     h e i g h t :   2 8 p x ; 
-     f l e x - s h r i n k :   0 ; 
-     z - i n d e x :   2 0 0 ; 
-     p o s i t i o n :   r e l a t i v e ; 
- } 
- 
- . m e n u - i t e m - c o n t a i n e r   { 
-     p o s i t i o n :   r e l a t i v e ; 
- } 
- 
- . m e n u - b u t t o n   { 
-     b a c k g r o u n d :   t r a n s p a r e n t ; 
-     b o r d e r :   n o n e ; 
-     c o l o r :   v a r ( - - t e x t - p r i m a r y ) ; 
-     f o n t - s i z e :   1 2 p x ; 
-     p a d d i n g :   4 p x   1 0 p x ; 
-     b o r d e r - r a d i u s :   v a r ( - - r a d i u s - s m ) ; 
-     c u r s o r :   p o i n t e r ; 
-     t r a n s i t i o n :   b a c k g r o u n d   0 . 1 s ; 
- } 
- 
- . m e n u - b u t t o n : h o v e r ,   . m e n u - b u t t o n . a c t i v e   { 
-     b a c k g r o u n d :   v a r ( - - b g - s u r f a c e - h o v e r ) ; 
- } 
- 
- . d r o p d o w n - m e n u   { 
-     p o s i t i o n :   a b s o l u t e ; 
-     t o p :   1 0 0 % ; 
-     l e f t :   0 ; 
-     b a c k g r o u n d :   v a r ( - - b g - p a n e l - a l t ) ; 
-     b o r d e r :   1 p x   s o l i d   v a r ( - - b o r d e r - c o l o r ) ; 
-     b o r d e r - r a d i u s :   v a r ( - - r a d i u s - s m ) ; 
-     m i n - w i d t h :   1 8 0 p x ; 
-     b o x - s h a d o w :   v a r ( - - s h a d o w - p a n e l ) ; 
-     p a d d i n g :   4 p x   0 ; 
-     d i s p l a y :   f l e x ; 
-     f l e x - d i r e c t i o n :   c o l u m n ; 
-     z - i n d e x :   3 0 0 ; 
- } 
- 
- . d r o p d o w n - i t e m   { 
-     b a c k g r o u n d :   t r a n s p a r e n t ; 
-     b o r d e r :   n o n e ; 
-     c o l o r :   v a r ( - - t e x t - p r i m a r y ) ; 
-     f o n t - s i z e :   1 2 p x ; 
-     p a d d i n g :   6 p x   1 6 p x ; 
-     t e x t - a l i g n :   l e f t ; 
-     c u r s o r :   p o i n t e r ; 
-     t r a n s i t i o n :   b a c k g r o u n d   0 . 1 s ; 
- } 
- 
- . d r o p d o w n - i t e m : h o v e r   { 
-     b a c k g r o u n d :   v a r ( - - b g - s u r f a c e - h o v e r ) ; 
-     c o l o r :   v a r ( - - a c c e n t - c y a n ) ; 
- } 
- 
- . d r o p d o w n - d i v i d e r   { 
-     h e i g h t :   1 p x ; 
-     b a c k g r o u n d :   v a r ( - - b o r d e r - c o l o r ) ; 
-     m a r g i n :   4 p x   0 ; 
- } 
-  
- 
+/* ========================================================================
+   Top Menu Bar
+   ======================================================================== */
+.top-menu-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-color);
+  height: 28px;
+  flex-shrink: 0;
+  z-index: 200;
+  position: relative;
+}
+
+.menu-item-container {
+  position: relative;
+}
+
+.menu-button {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.menu-button:hover, .menu-button.active {
+  background: var(--bg-surface-hover);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  min-width: 180px;
+  box-shadow: var(--shadow-panel);
+  padding: 4px 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 300;
+}
+
+.dropdown-item {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 6px 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.dropdown-item:hover {
+  background: var(--bg-surface-hover);
+  color: var(--accent-cyan);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 4px 0;
+}
