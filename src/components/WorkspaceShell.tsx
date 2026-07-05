@@ -83,14 +83,58 @@ export default function WorkspaceShell() {
     // Clear existing layout
     api.clear()
 
-    // 1. Add Timeline first (fills screen, will be pushed to bottom)
+    // 1. Add Outliner first (fills screen)
+    const outlinerPanel = api.addPanel({
+      id: 'outliner',
+      component: 'outliner',
+      title: '⊞ Outliner',
+    })
+
+    // 2. Add Top Viewport to the right of Outliner
+    const viewportTop = api.addPanel({
+      id: 'viewport-top',
+      component: 'viewport3d',
+      title: '🎥 Top View',
+      params: { viewType: 'top' },
+      position: { referencePanel: outlinerPanel, direction: 'right' },
+    })
+
+    // 3. Add Side Viewport to the right of Top Viewport
+    const viewportSide = api.addPanel({
+      id: 'viewport-side',
+      component: 'viewport3d',
+      title: '🎥 Side View',
+      params: { viewType: 'side' },
+      position: { referencePanel: viewportTop, direction: 'right' },
+    })
+
+    // 4. Add Front Viewport below Top Viewport
+    api.addPanel({
+      id: 'viewport-front',
+      component: 'viewport3d',
+      title: '🎥 Front View',
+      params: { viewType: 'front' },
+      position: { referencePanel: viewportTop, direction: 'below' },
+    })
+
+    // 5. Add Perspective Viewport below Side Viewport
+    api.addPanel({
+      id: 'viewport-persp',
+      component: 'viewport3d',
+      title: '🧬 Perspective',
+      params: { viewType: 'persp' },
+      position: { referencePanel: viewportSide, direction: 'below' },
+    })
+
+    // 6. Add Timeline at the root bottom (no referencePanel splits the root)
     const timelinePanel = api.addPanel({
       id: 'timeline',
       component: 'timeline',
       title: '▶ Timeline',
+      position: { direction: 'below' }, // omitted referencePanel
     })
 
-    // 2. Add AgentChat and Output Log into Timeline group
+    // 7. Add AgentChat and Output Log into Timeline group
     api.addPanel({
       id: 'agentchat',
       component: 'agentchat',
@@ -102,50 +146,6 @@ export default function WorkspaceShell() {
       component: 'commandoutput',
       title: '📝 Output Log',
       position: { referencePanel: timelinePanel, direction: 'within' },
-    })
-
-    // 3. Add Outliner above Timeline (Timeline becomes bottom half)
-    const outlinerPanel = api.addPanel({
-      id: 'outliner',
-      component: 'outliner',
-      title: '⊞ Outliner',
-      position: { referencePanel: timelinePanel, direction: 'above' },
-    })
-
-    // 4. Add Top Viewport to the right of Outliner (splits top half horizontally)
-    const viewportTop = api.addPanel({
-      id: 'viewport-top',
-      component: 'viewport3d',
-      title: '🎥 Top View',
-      params: { viewType: 'top' },
-      position: { referencePanel: outlinerPanel, direction: 'right' },
-    })
-
-    // 5. Add Side Viewport to the right of Top Viewport (splits viewports area into two columns)
-    const viewportSide = api.addPanel({
-      id: 'viewport-side',
-      component: 'viewport3d',
-      title: '🎥 Side View',
-      params: { viewType: 'side' },
-      position: { referencePanel: viewportTop, direction: 'right' },
-    })
-
-    // 6. Add Front Viewport below Top Viewport (splits left viewport column vertically)
-    api.addPanel({
-      id: 'viewport-front',
-      component: 'viewport3d',
-      title: '🎥 Front View',
-      params: { viewType: 'front' },
-      position: { referencePanel: viewportTop, direction: 'below' },
-    })
-
-    // 7. Add Perspective Viewport below Side Viewport (splits right viewport column vertically)
-    api.addPanel({
-      id: 'viewport-persp',
-      component: 'viewport3d',
-      title: '🧬 Perspective',
-      params: { viewType: 'persp' },
-      position: { referencePanel: viewportSide, direction: 'below' },
     })
   }, [])
 
