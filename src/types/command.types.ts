@@ -60,24 +60,7 @@ export interface CommandActions {
 }
 
 /**
- * Terminal UI state for collapsible/detachable output window
- */
-export interface TerminalUIState {
-  isOutputWindowOpen: boolean
-  isOutputWindowDetached: boolean
-  outputWindowHeight: number
-}
-
-/**
- * Terminal UI actions
- */
-export interface TerminalUIActions {
-  toggleOutputWindow: () => void
-  detachOutputWindow: () => void
-  setOutputWindowHeight: (height: number) => void
-}
-
-/**
  * Complete store interface combining state and actions
  */
-export type CommandStore = CommandState & CommandActions & TerminalUIState & TerminalUIActions
+export type CommandStore = CommandState & CommandActions
+

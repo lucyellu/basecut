@@ -6,7 +6,7 @@
 
 import { create } from 'zustand'
 import type { CommandStore, ParsedCommand, CommandDomain } from '../types/command.types'
-import type { BioData, LoadedDataInfo } from '../types/data.types'
+import type { LoadedDataInfo } from '../types/data.types'
 
 /**
  * Strict domain whitelist for command validation
@@ -28,7 +28,7 @@ function parseCommandString(commandString: string): ParsedCommand {
   const trimmed = commandString.trim()
 
   // Extract domain, action, and args using regex
-  const match = trimmed.match(/^(\w+)\.(\w+)\((.*)?\)$/)
+  const match = trimmed.match(/^(\w+)\.(\w+)\((.*)??\)$/)
 
   if (!match) {
     throw new Error(`Invalid command format: ${commandString}`)
@@ -42,7 +42,7 @@ function parseCommandString(commandString: string): ParsedCommand {
   }
 
   // Parse arguments
-  let args: any[] = []
+  let args: (string | number | boolean | object)[] = []
   if (argsString && argsString.trim()) {
     try {
       // Handle different argument types
@@ -72,7 +72,7 @@ function parseCommandString(commandString: string): ParsedCommand {
           args = [isNaN(Number(trimmedArg)) ? trimmedArg : Number(trimmedArg)]
         }
       }
-    } catch (error) {
+    } catch {
       throw new Error(`Failed to parse arguments: ${argsString}`)
     }
   }
@@ -99,21 +99,22 @@ function isValidCommand(parsed: ParsedCommand): boolean {
  */
 function executeCommandAction(
   parsed: ParsedCommand,
-  set: (partial: Partial<CommandStore>) => void,
-  get: () => CommandStore
+  set: (partial: Partial<CommandStore> | ((state: CommandStore) => Partial<CommandStore>)) => void,
+  _get: () => CommandStore
 ): void {
   const { domain, action, args } = parsed
 
   switch (domain) {
     case 'Timeline':
       switch (action) {
-        case 'setPlayhead':
+        case 'setPlayhead': {
           const position = typeof args[0] === 'number' ? args[0] : parseInt(args[0] as string)
           if (isNaN(position)) {
             throw new Error(`Invalid playhead position: ${args[0]}`)
           }
           set({ playheadPosition: position })
           break
+        }
 
         case 'reset':
           set({ playheadPosition: 0 })
@@ -135,7 +136,7 @@ function executeCommandAction(
           break
 
         case 'toggle':
-          set((state) => ({ isPlaying: !state.isPlaying }))
+          set((state: CommandStore) => ({ isPlaying: !state.isPlaying }))
           break
 
         case 'stop':
@@ -149,7 +150,7 @@ function executeCommandAction(
 
     case 'Data':
       switch (action) {
-        case 'load':
+        case 'load': {
           const filename = args[0] as string
           // In real app, would fetch from API or file system
           // For now, load from root (Vite serves public/ at root)
@@ -170,10 +171,11 @@ function executeCommandAction(
               set({ lastError: `Failed to load data: ${error.message}` })
             })
           break
+        }
 
-        case 'loadBioData':
+        case 'loadBioData': {
           // Specific command to load the bio-sequence data
-          const bioFilename = args[0] as string || 'bio-data-2026-07-05.json'
+          const bioFilename = (args[0] as string) || 'bio-data-2026-07-05.json'
           fetch(`/${bioFilename}`)
             .then(response => {
               if (!response.ok) throw new Error(`HTTP ${response.status}`)
@@ -197,16 +199,14 @@ function executeCommandAction(
               set({ lastError: `Failed to load bio-data: ${error.message}` })
             })
           break
+        }
 
         case 'clear':
           set({ currentData: null })
           break
 
         case 'editSequence':
-          // Edit a specific sequence
-          const sequenceId = args[0] as number
-          const edits = args[1] as Partial<BioSequence>
-          // In real app, would update specific sequence
+          // Placeholder for sequence editing — args[0] = sequenceId, args[1] = edits
           break
 
         default:
@@ -220,13 +220,14 @@ function executeCommandAction(
           // Placeholder for viewport reset
           break
 
-        case 'zoom':
+        case 'zoom': {
           const level = typeof args[0] === 'number' ? args[0] : parseFloat(args[0] as string)
           if (isNaN(level)) {
             throw new Error(`Invalid zoom level: ${args[0]}`)
           }
           // Placeholder for viewport zoom
           break
+        }
 
         default:
           throw new Error(`Unknown Viewport action: ${action}`)
@@ -251,38 +252,6 @@ export const useCommandStore = create<CommandStore>((set, get) => ({
   parsedHistory: [],
   lastError: null,
   commandCount: 0,
-
-  // Terminal UI state
-  terminalUI: {
-    isOutputWindowOpen: true,
-    isOutputWindowDetached: false,
-    outputWindowHeight: 256 // 64rem = 256px
-  },
-
-  /**
-   * Terminal UI actions
-   */
-  toggleOutputWindow: () => set((state) => ({
-    terminalUI: {
-      ...state.terminalUI,
-      isOutputWindowOpen: !state.terminalUI.isOutputWindowOpen
-    }
-  })),
-
-  detachOutputWindow: () => set((state) => ({
-    terminalUI: {
-      ...state.terminalUI,
-      isOutputWindowDetached: !state.terminalUI.isOutputWindowDetached,
-      isOutputWindowOpen: !state.terminalUI.isOutputWindowDetached
-    }
-  })),
-
-  setOutputWindowHeight: (height: number) => set((state) => ({
-    terminalUI: {
-      ...state.terminalUI,
-      outputWindowHeight: height
-    }
-  })),
 
   /**
    * CORE FUNCTION: Execute a command string

@@ -1,8 +1,8 @@
 # Basecut NLE - Project State & Progress Tracking
 
-**Last Updated**: 2026-07-05 14:00
+**Last Updated**: 2026-07-05 14:15
 **Current Branch**: `dev`
-**Status**: ✅ 3D Viewport & Timeline Scrubber Complete - Ready for Testing
+**Status**: ✅ Complete NLE Interface - Ready for Testing & Compaction
 
 ---
 
@@ -92,22 +92,31 @@ src/
 
 ## 🚧 Next Steps (Current Session)
 
-**IMMEDIATE**: Test 3D viewport and timeline integration
-1. Load bio-data: `Data.loadBioData('bio-data-2026-07-05.json')`
-2. Drag timeline scrubber - should see camera move smoothly
-3. Click on timeline - playhead updates and camera follows
-4. Verify 3D structure appears correctly
-5. Check waveform visualization matches sequence values
+**ACTION REQUIRED**: Run `/compact` to free context (currently at 75%)
+
+**AFTER COMPACTION** - Test the complete NLE interface:
+1. Double-click "Basecut NLE" desktop shortcut OR run `npm run dev`
+2. Open http://localhost:3005/
+3. Load bio-data: `Data.loadBioData('bio-data-2026-07-05.json')`
+4. Drag timeline - watch camera smoothly follow the 3D structure
+5. Click timeline positions - playhead jumps and camera moves
+6. Verify waveform matches sequence values
+7. Test command terminal still works with new UI
+
+**DESKTOP SHORTCUTS CREATED**:
+- "Basecut NLE" - Full launcher (starts server + opens app)
+- "Open Basecut NLE" - Quick browser open (if server running)
 
 **TESTING CHECKLIST**:
-- ✅ Three.js canvas renders without errors
-- ✅ Timeline shows 100 base letters
-- ✅ Waveform bars display value scores
-- ✅ Dragging playhead fires `Timeline.setPlayhead(id)` command
-- ✅ Camera lerps smoothly to follow playhead
-- ✅ Active base marker glows at current position
+- [ ] 3D viewport renders green line connecting sequences
+- [ ] Timeline shows 100 base letters + waveform bars
+- [ ] Dragging playhead fires `Timeline.setPlayhead(id)` command
+- [ ] Camera lerps smoothly to follow playhead position
+- [ ] Glowing sphere marks current base in 3D
+- [ ] Commands work in terminal with new UI layout
+- [ ] Desktop shortcuts launch app correctly
 
-**FUTURE**: Export/import, undo/redo, advanced editing
+**FUTURE**: Export/import, undo/redo, advanced editing features
 
 ---
 

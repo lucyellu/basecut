@@ -14,56 +14,102 @@ import { useCommandStore } from '../store/useCommandStore'
 function SceneContent() {
   const currentData = useCommandStore((state) => state.currentData as any)
   const playheadPosition = useCommandStore((state) => state.playheadPosition)
-  const { camera } = useThree()
+  const selection = useCommandStore((state) => state.selection)
+  const { camera, gl } = useThree()
 
   const sequences = currentData?.data?.sequences || []
-  const sphereRef = useRef<THREE.Mesh>(null)
-  const targetPosition = useRef(new THREE.Vector3())
+  const sphereRef = useRef<THREE.Group>(null)
+  const controlsRef = useRef<any>(null)
+  
+  // Animation state for framing
+  const isFraming = useRef(false)
+  const frameTargetCenter = useRef(new THREE.Vector3())
+  const frameTargetCamPos = useRef(new THREE.Vector3())
   const isInitialized = useRef(false)
 
   // Calculate the current playhead position
-  const currentIndex = Math.round(playheadPosition) - 1
+  const currentIndex = Math.max(0, Math.round(playheadPosition) - 1)
   const currentSequence = sequences[currentIndex]
 
-  // Update target position when playhead changes
-  useEffect(() => {
+  // Frame logic
+  const frameSelection = () => {
+    if (sequences.length === 0) return
+
+    let center = new THREE.Vector3()
+    let boundingSphereRadius = 10
+
     if (currentSequence) {
-      targetPosition.current.set(currentSequence.x, currentSequence.y, currentSequence.z)
+      // Frame the current node
+      center.set(currentSequence.x, currentSequence.y, currentSequence.z)
+      boundingSphereRadius = 20 // Default zoom distance for a single node
+    } else {
+      // Frame entire scene
+      const box = new THREE.Box3()
+      sequences.forEach((seq: any) => {
+        box.expandByPoint(new THREE.Vector3(seq.x, seq.y, seq.z))
+      })
+      box.getCenter(center)
+      boundingSphereRadius = box.getBoundingSphere(new THREE.Sphere()).radius
+    }
+
+    // Set animation targets
+    frameTargetCenter.current.copy(center)
+    
+    // Offset camera slightly up and back based on the size of the object
+    const offset = new THREE.Vector3(0, 0, boundingSphereRadius * 1.5)
+    // Try to maintain the current camera angle if possible, otherwise use default offset
+    const currentDir = camera.position.clone().sub(controlsRef.current?.target || center).normalize()
+    if (currentDir.lengthSq() > 0.1) {
+      frameTargetCamPos.current.copy(center).add(currentDir.multiplyScalar(boundingSphereRadius * 1.5))
+    } else {
+      frameTargetCamPos.current.copy(center).add(offset)
+    }
+    
+    isFraming.current = true
+  }
+
+  // Listen for 'f' key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      if (e.key.toLowerCase() === 'f' && e.target instanceof Element && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        frameSelection()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [sequences, currentSequence])
+
+  // Update sphere position immediately when sequence changes
+  useEffect(() => {
+    if (currentSequence && sphereRef.current) {
+      sphereRef.current.position.set(currentSequence.x, currentSequence.y, currentSequence.z)
     }
   }, [currentSequence])
 
-  // ⚡ CRITICAL: Camera lerping in useFrame for smooth performance
-  // This mutates camera directly without triggering React re-renders
   useFrame(() => {
-    if (currentSequence && sphereRef.current) {
-      // Smoothly interpolate camera position toward target
-      const smoothFactor = 0.05
-      camera.position.lerp(targetPosition.current, smoothFactor)
-
-      // Make camera look at the current position
-      const lookAtTarget = new THREE.Vector3(
-        currentSequence.x,
-        currentSequence.y,
-        currentSequence.z
-      )
-      camera.lookAt(lookAtTarget)
-
-      // Update sphere position
-      sphereRef.current.position.set(
-        currentSequence.x,
-        currentSequence.y,
-        currentSequence.z
-      )
-
-      // Auto-rotate sphere for visual effect
+    // Auto-rotate the active node marker for visual effect
+    if (sphereRef.current) {
       sphereRef.current.rotation.y += 0.01
       sphereRef.current.rotation.x += 0.005
     }
 
-    // Initialize camera position on first frame
+    // Handle smooth framing animation
+    if (isFraming.current && controlsRef.current) {
+      const smoothFactor = 0.1
+      camera.position.lerp(frameTargetCamPos.current, smoothFactor)
+      controlsRef.current.target.lerp(frameTargetCenter.current, smoothFactor)
+      controlsRef.current.update()
+
+      // Stop framing when close enough
+      if (camera.position.distanceTo(frameTargetCamPos.current) < 0.5) {
+        isFraming.current = false
+      }
+    }
+
+    // Initialize camera position on first load
     if (!isInitialized.current && sequences.length > 0) {
-      const firstSeq = sequences[0]
-      camera.position.set(firstSeq.x, firstSeq.y, firstSeq.z + 20)
+      frameSelection()
       isInitialized.current = true
     }
   })
@@ -74,7 +120,7 @@ function SceneContent() {
   return (
     <>
       {/* Camera Controls */}
-      <OrbitControls enableDamping dampingFactor={0.05} />
+      <OrbitControls ref={controlsRef} enableDamping dampingFactor={0.05} />
 
       {/* Lighting */}
       <ambientLight intensity={0.5} />
@@ -113,11 +159,10 @@ function SceneContent() {
 
           {/* Inner sphere */}
           <Sphere args={[0.4, 32, 32]}>
-            <meshBasicMaterial
+            <meshStandardMaterial
               color="#00ffff"
               emissive="#00ffff"
               emissiveIntensity={0.5}
-              blending={THREE.AdditiveBlending}
             />
           </Sphere>
         </group>
@@ -150,21 +195,20 @@ export default function Viewport3D() {
   const sequences = currentData?.data?.sequences || []
 
   return (
-    <div className="viewport-3d bg-gray-900 border border-gray-700 rounded-lg overflow-hidden" style={{ height: '400px' }}>
+    <div className="viewport-3d">
       {sequences.length > 0 ? (
         <Canvas
-          camera={{ position: [0, 0, 50], fov: 50 }}
+          camera={{ position: [0, 0, 50], fov: 50, near: 0.1, far: 10000 }}
           gl={{ antialias: true, alpha: true }}
           style={{ width: '100%', height: '100%' }}
         >
           <SceneContent />
         </Canvas>
       ) : (
-        <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-          <div className="text-center">
-            <div className="text-4xl mb-2">🧬</div>
-            <div>Load bio-data to see 3D structure</div>
-          </div>
+        <div className="viewport-empty">
+          <div className="viewport-empty-icon">🧬</div>
+          <div className="viewport-empty-text">Load bio-data to see 3D structure</div>
+          <div className="viewport-empty-hint">Use Outliner → Load Bio Data</div>
         </div>
       )}
     </div>
