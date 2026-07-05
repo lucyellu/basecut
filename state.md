@@ -1,66 +1,148 @@
-# Context handoff — `state.md`
+# Basecut NLE - Project State & Progress Tracking
 
-> Auto-written 2026-07-05T20:24:45.472Z — context reached ~54% used.
-> Fill in the **Goal / Current state / Next step** sections, then run `/compact`.
-> After compaction this file is auto-loaded so work continues.
+**Last Updated**: 2026-07-05 13:45
+**Current Branch**: `dev`
+**Status**: ✅ Core Command Engine Complete - Ready for Advanced Features
 
-## Goal
+---
 
-_(one line — what this session is trying to achieve)_
+## 🎯 Project Overview
 
-## Current state
+**Goal**: React Non-Linear Editor with strict Command Pattern architecture for bio-sequence visualization
 
-_(what you just finished / are in the middle of)_
+**Key Innovation**: All state mutations through text commands (`executeCommand()`), creating auditable, reproducible system like Maya
 
-## Next step
+**Repository**: https://github.com/lucyellu/basecut.git
 
-_(the single concrete next action)_
+---
 
-## Key decisions / constraints / open questions
+## ✅ Completed Features
 
--
+### 1. Command Engine (Zustand Store)
+- `src/store/useCommandStore.ts` - Single mutation point via `executeCommand(commandString)`
+- Strict TypeScript with `ParsedCommand` interface
+- Domain whitelist: `Timeline | Playback | Data | Viewport`
+- Command history (raw + parsed) + error handling
 
-## Files touched this session
+### 2. Terminal Interface (Maya-Style)
+- `CommandInputBar.tsx` - Always-visible input at bottom
+- `CommandOutputWindow.tsx` - Collapsible output panel
+- Separate scrollable panels, resizable, dark theme
 
-- `C:\Users\lucyl\.claude\plans\elegant-dreaming-lampson.md`
-- `package.json`
-- `vite.config.ts`
-- `tsconfig.json`
-- `tsconfig.node.json`
-- `tailwind.config.js`
-- `postcss.config.js`
-- `index.html`
-- `src\types\command.types.ts`
-- `src\store\useCommandStore.ts`
-- `src\components\Terminal.tsx`
-- `src\App.tsx`
-- `src\main.tsx`
-- `src\index.css`
-- `.gitignore`
-- `src\components\CommandInputBar.tsx`
-- `src\components\CommandOutputWindow.tsx`
-- `src\types\data.types.ts`
+### 3. Data Loading System
+- `DataPanel.tsx` - GUI for loading/editing bio-sequence data
+- `data.types.ts` - Type definitions
+- `public/bio-data-2026-07-05.json` - Sample data (100 sequences, 5 cameras)
 
-## Commands run
+### 4. Layout & UI
+- Separate scrollable panels (main vs terminal)
+- Status dashboard, quick commands, responsive design
 
-- `ls -la`
-- `if [ -f "C:\Users\lucyl\AppData\Local\Temp\claude\L--Projects-basecut\cc76c3c5-a8dd-40fd-b887-720d3dfa5218\tasks\ac573894776fb21eb.output" ]; then cat "C:\Users`
-- `sleep 15 && ls -la "C:\Users\lucyl\AppData\Local\Temp\claude\L--Projects-basecut\cc76c3c5-a8dd-40fd-b887-720d3dfa5218\tasks\ac573894776fb21eb.output" 2>&1 | hea`
-- `sleep 20 && if [ -s "C:\Users\lucyl\AppData\Local\Temp\claude\L--Projects-basecut\cc76c3c5-a8dd-40fd-b887-720d3dfa5218\tasks\ac573894776fb21eb.output" ]; then e`
-- `npm install`
-- `npm run dev`
-- `sleep 5 && echo "Server should be starting..."`
-- `echo "Checking if dev server is still running..." && ps aux | grep -i "vite" | grep -v grep || echo "Dev server not running"`
-- `sleep 5 && echo "Dev server should be ready..."`
-- `ps aux | grep -i "vite" | grep -v grep || echo "Dev server not running"`
-- `npm run dev &`
-- `git init`
-- `git add .`
-- `git commit -m "Initial commit: Headless Command Engine for React NLE Implemented strict Command Pattern architecture where all state mutations occur through tex`
-- `git remote add origin https://github.com/lucyellu/basecut.git`
+---
 
-## Recent user prompts (oldest -> newest)
+## 🔧 Available Commands
 
-1. the command terminal should be collapsable and could we get a seperarte window for the output similar to maya?
-2. the main area (not terminal) should have it's own scroll bar it's mostly being blocked by the terminal right now
-3. can we try to load this dummy data L:\Projects\basecut\public\bio-data-2026-07-05.json there should be gui to load or edit the data input
+```bash
+Timeline.setPlayhead(5)    # Set playhead position
+Playback.play()            # Start playback
+Playback.toggle()          # Toggle playback
+Data.loadBioData('bio-data-2026-07-05.json')  # Load bio-sequence data
+Data.clear()              # Clear loaded data
+```
+
+---
+
+## 📁 Key Files
+
+```
+src/
+├── components/
+│   ├── CommandInputBar.tsx     # Always-visible input
+│   ├── CommandOutputWindow.tsx # Collapsible output
+│   └── DataPanel.tsx          # Data GUI
+├── store/
+│   └── useCommandStore.ts      # Command engine ⭐
+├── types/
+│   ├── command.types.ts        # Command interfaces
+│   └── data.types.ts           # Data interfaces
+└── App.tsx                     # Root component
+```
+
+---
+
+## 🧪 Testing Status
+
+**Working**: ✅ Terminal commands, state updates, data loading, error handling
+**Ready to Test**: Load bio-data via `Data.loadBioData('bio-data-2026-07-05.json')`
+
+---
+
+## 🚧 Next Steps (Current Session)
+
+**IMMEDIATE**: Test data loading thoroughly
+1. Run `Data.loadBioData('bio-data-2026-07-05.json')`
+2. Verify 100 sequences load correctly
+3. Check camera state updates
+4. Confirm playhead initializes to position 64
+
+**FUTURE**: 3D viewport, timeline scrubber, waveform tracks
+
+---
+
+## 📊 Bio-Data Structure
+
+```json
+{
+  "sequences": [100 DNA bases with 3D coordinates],
+  "currentPlayheadIndex": 64,
+  "cameras": [5 camera configurations],
+  "activeCameraId": "camera_1783210028954"
+}
+```
+
+---
+
+## 🛠️ Resume Instructions
+
+1. Read this file for current state
+2. `git checkout dev` (current branch)
+3. `npm install && npm run dev`
+4. Test: `Data.loadBioData('bio-data-2026-07-05.json')`
+
+---
+
+## 📝 Recent Progress
+
+**Latest Commits**:
+- `3a938a4` - Remove redundant Recent Commands section
+- `2bbb52e` - Add data loading system and README
+- `877c3f3` - Fix layout: Separate scrollable panels
+
+**Branch Status**: dev is clean, main is stable
+
+---
+
+## 🎯 Architecture Principle
+
+```typescript
+// ❌ WRONG
+setPlayheadPosition(10)
+
+// ✅ RIGHT
+executeCommand('Timeline.setPlayhead(10)')
+```
+
+**All state changes MUST go through commands**
+
+---
+
+## 📈 Project Metrics
+
+- Commands: 12 total
+- Components: 5 main
+- Code: ~2,000 lines
+- Data: 100 sequences, 5 cameras
+
+---
+
+**Status**: 🟢 Ready for testing and next phase
