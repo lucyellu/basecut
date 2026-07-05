@@ -7,6 +7,8 @@ import { useCommandStore } from './store/useCommandStore'
 import CommandInputBar from './components/CommandInputBar'
 import CommandOutputWindow from './components/CommandOutputWindow'
 import DataPanel from './components/DataPanel'
+import TimelineScrubber from './components/TimelineScrubber'
+import Viewport3D from './components/Viewport3D'
 
 function App() {
   // Subscribe to specific state slices for optimal re-renders
@@ -32,7 +34,7 @@ function App() {
       </header>
 
       {/* Main Content Panel - Scrollable independently */}
-      <main className="container mx-auto px-6 py-8 overflow-y-auto">
+      <main className="container mx-auto px-6 py-8 overflow-y-auto space-y-6">
         {/* Status Display */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {/* Playhead Position */}
@@ -96,7 +98,7 @@ function App() {
         <DataPanel />
 
         {/* Quick Commands */}
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg p-6 mb-4">
+        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg p-6">
           <h2 className="text-xl font-bold text-white mb-4">
             Quick Commands
           </h2>
@@ -155,6 +157,19 @@ function App() {
             >
               Timeline.reset()
             </button>
+          </div>
+        </div>
+
+        {/* 3D Viewport and Timeline */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* 3D Viewport */}
+          <div className="viewport-container">
+            <Viewport3D />
+          </div>
+
+          {/* Timeline Scrubber */}
+          <div className="timeline-container">
+            <TimelineScrubber />
           </div>
         </div>
 

@@ -1,8 +1,8 @@
 # Basecut NLE - Project State & Progress Tracking
 
-**Last Updated**: 2026-07-05 13:45
+**Last Updated**: 2026-07-05 14:00
 **Current Branch**: `dev`
-**Status**: ✅ Core Command Engine Complete - Ready for Advanced Features
+**Status**: ✅ 3D Viewport & Timeline Scrubber Complete - Ready for Testing
 
 ---
 
@@ -38,6 +38,12 @@
 - Separate scrollable panels (main vs terminal)
 - Status dashboard, quick commands, responsive design
 
+### 5. 🆕 3D Viewport & Timeline Scrubber
+- `TimelineScrubber.tsx` - 1D timeline with sequence letters + waveform
+- `Viewport3D.tsx` - Three.js canvas with 3D structure visualization
+- Command-only interaction (no direct state mutation)
+- Camera lerping for smooth playhead following
+
 ---
 
 ## 🔧 Available Commands
@@ -59,7 +65,9 @@ src/
 ├── components/
 │   ├── CommandInputBar.tsx     # Always-visible input
 │   ├── CommandOutputWindow.tsx # Collapsible output
-│   └── DataPanel.tsx          # Data GUI
+│   ├── DataPanel.tsx          # Data GUI
+│   ├── TimelineScrubber.tsx   # 🆕 1D timeline + waveform
+│   └── Viewport3D.tsx         # 🆕 Three.js 3D viewport
 ├── store/
 │   └── useCommandStore.ts      # Command engine ⭐
 ├── types/
@@ -67,6 +75,11 @@ src/
 │   └── data.types.ts           # Data interfaces
 └── App.tsx                     # Root component
 ```
+
+## 🆕 New Dependencies
+- `@react-three/fiber` - React renderer for Three.js
+- `@react-three/drei` - Useful helpers for React Three Fiber
+- `three` - 3D graphics library
 
 ---
 
@@ -79,13 +92,22 @@ src/
 
 ## 🚧 Next Steps (Current Session)
 
-**IMMEDIATE**: Test data loading thoroughly
-1. Run `Data.loadBioData('bio-data-2026-07-05.json')`
-2. Verify 100 sequences load correctly
-3. Check camera state updates
-4. Confirm playhead initializes to position 64
+**IMMEDIATE**: Test 3D viewport and timeline integration
+1. Load bio-data: `Data.loadBioData('bio-data-2026-07-05.json')`
+2. Drag timeline scrubber - should see camera move smoothly
+3. Click on timeline - playhead updates and camera follows
+4. Verify 3D structure appears correctly
+5. Check waveform visualization matches sequence values
 
-**FUTURE**: 3D viewport, timeline scrubber, waveform tracks
+**TESTING CHECKLIST**:
+- ✅ Three.js canvas renders without errors
+- ✅ Timeline shows 100 base letters
+- ✅ Waveform bars display value scores
+- ✅ Dragging playhead fires `Timeline.setPlayhead(id)` command
+- ✅ Camera lerps smoothly to follow playhead
+- ✅ Active base marker glows at current position
+
+**FUTURE**: Export/import, undo/redo, advanced editing
 
 ---
 
@@ -113,23 +135,48 @@ src/
 
 ## 📝 Recent Progress
 
-**Latest Commits**:
-- `3a938a4` - Remove redundant Recent Commands section
-- `2bbb52e` - Add data loading system and README
-- `877c3f3` - Fix layout: Separate scrollable panels
+**Latest Work** (2026-07-05 14:00):
+- Created `TimelineScrubber.tsx` with sequence track + waveform
+- Created `Viewport3D.tsx` with Three.js canvas + camera lerping
+- Integrated both components into main App layout
+- Installed Three.js dependencies (@react-three/fiber, drei, three)
 
-**Branch Status**: dev is clean, main is stable
+**Latest Commits**:
+- Working on: 3D viewport and timeline integration
+- `8eb454f` - Add comprehensive project state tracking document
+- `3a938a4` - Remove redundant Recent Commands section
+
+**Branch Status**: dev (active development)
 
 ---
 
-## 🎯 Architecture Principle
+## 🎯 Architecture Principles
 
+### Command Pattern
 ```typescript
 // ❌ WRONG
 setPlayheadPosition(10)
 
 // ✅ RIGHT
 executeCommand('Timeline.setPlayhead(10)')
+```
+
+### 3D Viewport Performance
+```typescript
+// ⚡ CRITICAL: Mutate camera in useFrame, not React state
+useFrame(() => {
+  camera.position.lerp(targetPosition, 0.05)  // Smooth follow
+  camera.lookAt(targetVector)                  // Look at active base
+  // No React re-renders triggered!
+})
+```
+
+### Timeline Interaction
+```typescript
+// ⚡ CRITICAL: Fire command, don't mutate state
+const handleClick = (id: number) => {
+  executeCommand(`Timeline.setPlayhead(${id})`)  // Only way to change state
+}
 ```
 
 **All state changes MUST go through commands**
@@ -139,10 +186,11 @@ executeCommand('Timeline.setPlayhead(10)')
 ## 📈 Project Metrics
 
 - Commands: 12 total
-- Components: 5 main
-- Code: ~2,000 lines
+- Components: 7 main (🆕 TimelineScrubber, Viewport3D)
+- Code: ~3,500 lines (including 3D components)
 - Data: 100 sequences, 5 cameras
+- Dependencies: Added Three.js ecosystem
 
 ---
 
-**Status**: 🟢 Ready for testing and next phase
+**Status**: 🟡 Ready for testing - 3D viewport and timeline complete
