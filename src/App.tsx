@@ -8,6 +8,8 @@ import { useEffect } from 'react'
 import WorkspaceShell from './components/WorkspaceShell'
 import { useCommandStore } from './store/useCommandStore'
 
+import TopMenu from './components/TopMenu'
+
 function App() {
   const executeCommand = useCommandStore((state) => state.executeCommand)
 
@@ -28,6 +30,9 @@ function App() {
           <span className="header-badge">v0.1</span>
         </div>
       </header>
+
+      {/* Top Menu Bar */}
+      <TopMenu />
 
       {/* Dockview workspace fills remaining space */}
       <WorkspaceShell />
