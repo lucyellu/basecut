@@ -12,7 +12,7 @@ import type { LoadedDataInfo } from '../types/data.types'
  * Strict domain whitelist for command validation
  * Prevents invalid commands from executing
  */
-const VALID_DOMAINS: CommandDomain[] = ['Timeline', 'Playback', 'Data', 'Viewport']
+const VALID_DOMAINS: CommandDomain[] = ['Timeline', 'Playback', 'Data', 'Viewport', 'Camera']
 
 /**
  * Parse a command string into a ParsedCommand object
@@ -246,6 +246,34 @@ function executeCommandAction(
 
         default:
           throw new Error(`Unknown Viewport action: ${action}`)
+      }
+      break
+
+    case 'Camera':
+      switch (action) {
+        case 'update': {
+          const camId = args[0] as string
+          const updates = typeof args[1] === 'string' ? JSON.parse(args[1]) : args[1]
+          
+          set((state) => {
+            if (!state.currentData || !state.currentData.data.cameras) return state
+            const newCameras = state.currentData.data.cameras.map((c: any) => 
+              c.id === camId || c.name === camId ? { ...c, ...updates } : c
+            )
+            return {
+              currentData: {
+                ...state.currentData,
+                data: {
+                  ...state.currentData.data,
+                  cameras: newCameras
+                }
+              }
+            }
+          })
+          break
+        }
+        default:
+          throw new Error(`Unknown Camera action: ${action}`)
       }
       break
 

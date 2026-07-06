@@ -14,6 +14,7 @@ export default function OutlinerPanel() {
   const commandCount = useCommandStore((state) => state.commandCount)
   const executeCommand = useCommandStore((state) => state.executeCommand)
   const lastError = useCommandStore((state) => state.lastError)
+  const selection = useCommandStore((state) => state.selection)
 
   const [commandInput, setCommandInput] = useState('')
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -158,15 +159,23 @@ export default function OutlinerPanel() {
           </button>
           {expandedSections.cameras && (
             <div className="section-body">
-              {cameras.map((cam: any) => (
-                <div key={cam.id} className="camera-item">
-                  <span className="camera-icon">
-                    {cam.type === 'perspective' ? '📐' : '📏'}
-                  </span>
-                  <span className="camera-name">{cam.name}</span>
-                  <span className="camera-type">{cam.type}</span>
-                </div>
-              ))}
+              {cameras.map((cam: any) => {
+                const isSelected = selection?.includes(cam.id) || selection?.includes(`${cam.id}`)
+                return (
+                  <div 
+                    key={cam.id} 
+                    className={`camera-item ${isSelected ? 'active' : ''}`}
+                    onClick={() => executeCommand(`Data.select('${cam.id}')`)}
+                    style={{ cursor: 'pointer', padding: '4px', borderRadius: '4px', background: isSelected ? 'rgba(0, 229, 255, 0.1)' : 'transparent', border: isSelected ? '1px solid var(--accent-cyan)' : '1px solid transparent' }}
+                  >
+                    <span className="camera-icon">
+                      {cam.type === 'perspective' ? '📐' : '📏'}
+                    </span>
+                    <span className="camera-name">{cam.name}</span>
+                    <span className="camera-type">{cam.type}</span>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>

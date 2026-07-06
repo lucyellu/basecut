@@ -18,6 +18,7 @@ import Viewport3D from './Viewport3D'
 import TimelineScrubber from './TimelineScrubber'
 import AgentChatPanel from './AgentChatPanel'
 import CommandOutputWindow from './CommandOutputWindow'
+import DetailsPanel from './DetailsPanel'
 import { useCommandStore } from '../store/useCommandStore'
 
 /**
@@ -65,6 +66,14 @@ function CommandOutputWindowWrapper(_props: IDockviewPanelProps) {
   )
 }
 
+function DetailsPanelWrapper(props: IDockviewPanelProps) {
+  return (
+    <div className="panel-content details-panel" style={{ height: '100%', width: '100%' }}>
+      <DetailsPanel {...props} />
+    </div>
+  )
+}
+
 /**
  * Component registry for Dockview
  */
@@ -74,6 +83,7 @@ const components: Record<string, React.FunctionComponent<IDockviewPanelProps>> =
   timeline: TimelinePanelWrapper,
   agentchat: AgentChatPanelWrapper,
   commandoutput: CommandOutputWindowWrapper,
+  details: DetailsPanelWrapper,
 }
 
 export default function WorkspaceShell() {
@@ -118,16 +128,24 @@ export default function WorkspaceShell() {
       title: '⊞ Outliner',
     })
 
-    // 2. Add Top Viewport to the right of Outliner (splits width)
+    // 2. Add Details to the far right (splits screen 50/50)
+    const detailsPanel = api.addPanel({
+      id: 'details',
+      component: 'details',
+      title: '☰ Details',
+      position: { referencePanel: outlinerPanel, direction: 'right' }
+    })
+
+    // 3. Add Top Viewport to the left of Details (splits 50/50, creating a center column)
     const viewportTop = api.addPanel({
       id: 'viewport-top',
       component: 'viewport3d',
       title: '🎥 Top View',
       params: { viewType: 'top' },
-      position: { referencePanel: outlinerPanel, direction: 'right' },
+      position: { referencePanel: detailsPanel, direction: 'left' },
     })
 
-    // 3. Add Side Viewport to the right of Top Viewport (splits right area)
+    // 4. Add Side Viewport to the right of Top Viewport (splits center column 50/50)
     const viewportSide = api.addPanel({
       id: 'viewport-side',
       component: 'viewport3d',
@@ -136,7 +154,7 @@ export default function WorkspaceShell() {
       position: { referencePanel: viewportTop, direction: 'right' },
     })
 
-    // 4. Add Front Viewport below Top Viewport
+    // 5. Add Front Viewport below Top Viewport
     api.addPanel({
       id: 'viewport-front',
       component: 'viewport3d',
@@ -145,7 +163,7 @@ export default function WorkspaceShell() {
       position: { referencePanel: viewportTop, direction: 'below' },
     })
 
-    // 5. Add Perspective Viewport below Side Viewport
+    // 6. Add Perspective Viewport below Side Viewport
     api.addPanel({
       id: 'viewport-persp',
       component: 'viewport3d',

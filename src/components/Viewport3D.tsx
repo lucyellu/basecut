@@ -15,7 +15,6 @@ function SceneContent() {
   const currentData = useCommandStore((state) => state.currentData as any)
   const playheadPosition = useCommandStore((state) => state.playheadPosition)
   const selection = useCommandStore((state) => state.selection)
-  const executeCommand = useCommandStore((state) => state.executeCommand)
   const { camera } = useThree()
 
   const sequences = currentData?.data?.sequences || []
@@ -206,28 +205,36 @@ function SceneContent() {
       {/* Sequence Points (optional - show all positions as small dots) */}
       {sequences.map((seq: any, index: number) => {
         const isActive = index === currentIndex
-        const isSelected = selection?.includes(seq.id)
+        const isSelected = selection?.includes(seq.id) || selection?.includes(`${seq.id}`)
+        
         return (
-          <Sphere
-            key={seq.id}
-            args={[0.1, 8, 8]}
-            position={[seq.x, seq.y, seq.z]}
-            onClick={(e) => {
-              // Only trigger if mouse delta is small (i.e. not dragging)
-              if (e.delta <= 2) {
-                e.stopPropagation()
-                // Select the node, wrap ID in quotes if it's a string, or just pass number
-                const idArg = typeof seq.id === 'string' ? `'${seq.id}'` : seq.id
-                executeCommand(`Data.select(${idArg})`)
-              }
-            }}
-          >
-            <meshBasicMaterial
-              color={isActive ? '#00ffff' : isSelected ? '#ff9f43' : '#444444'}
-              transparent
-              opacity={isActive || isSelected ? 1 : 0.3}
-            />
-          </Sphere>
+          <group key={seq.id} position={[seq.x, seq.y, seq.z]}>
+            {/* Visual Dot */}
+            <Sphere args={[0.1, 8, 8]}>
+              <meshBasicMaterial
+                color={isActive ? '#00ffff' : isSelected ? '#ff9f43' : '#444444'}
+                transparent
+                opacity={isActive || isSelected ? 1 : 0.3}
+              />
+            </Sphere>
+            
+            {/* Invisible Hitbox for easy clicking */}
+            <Sphere 
+              args={[1.5, 8, 8]}
+              onClick={(e) => {
+                // Only trigger if mouse delta is small (i.e. not dragging)
+                if (e.delta <= 2) {
+                  e.stopPropagation()
+                  // Select the node, wrap ID in quotes if it's a string, or just pass number
+                  const idArg = typeof seq.id === 'string' ? `'${seq.id}'` : seq.id
+                  const state = useCommandStore.getState()
+                  state.executeCommand(`Data.select(${idArg})`)
+                }
+              }}
+            >
+              <meshBasicMaterial visible={false} />
+            </Sphere>
+          </group>
         )
       })}
     </>
@@ -279,10 +286,24 @@ export default function Viewport3D({ viewType = 'persp' }: { viewType?: 'top' | 
             }
           }}
         >
-          {currentView === 'persp' && <PerspectiveCamera makeDefault position={[50, 50, 50]} fov={50} near={0.1} far={10000} />}
-          {currentView === 'top' && <OrthographicCamera makeDefault position={[0, 100, 0]} zoom={20} near={0.1} far={10000} />}
-          {currentView === 'front' && <OrthographicCamera makeDefault position={[0, 0, 100]} zoom={20} near={0.1} far={10000} />}
-          {currentView === 'side' && <OrthographicCamera makeDefault position={[100, 0, 0]} zoom={20} near={0.1} far={10000} />}
+          {(() => {
+            // Find specific camera config or fallback to defaults
+            const cameras = currentData?.data?.cameras || []
+            // Use 'persp' for perspective, or try to match orthographic types if available
+            const config = cameras.find((c: any) => c.id === currentView || c.type === (currentView === 'persp' ? 'perspective' : 'orthographic'))
+            const near = config?.near || 0.1
+            const far = config?.far || 100000
+            const fov = config?.fov || 50
+
+            return (
+              <>
+                {currentView === 'persp' && <PerspectiveCamera makeDefault position={[50, 50, 50]} fov={fov} near={near} far={far} />}
+                {currentView === 'top' && <OrthographicCamera makeDefault position={[0, 100, 0]} zoom={20} near={near} far={far} />}
+                {currentView === 'front' && <OrthographicCamera makeDefault position={[0, 0, 100]} zoom={20} near={near} far={far} />}
+                {currentView === 'side' && <OrthographicCamera makeDefault position={[100, 0, 0]} zoom={20} near={near} far={far} />}
+              </>
+            )
+          })()}
           <SceneContent />
         </Canvas>
       ) : (

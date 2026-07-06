@@ -7,7 +7,7 @@
  * Valid command domains for type safety
  * Only these domains are allowed in the command system
  */
-export type CommandDomain = 'Timeline' | 'Playback' | 'Data' | 'Viewport'
+export type CommandDomain = 'Timeline' | 'Playback' | 'Data' | 'Viewport' | 'Camera'
 
 /**
  * Parsed command interface - every command resolves to this structure
