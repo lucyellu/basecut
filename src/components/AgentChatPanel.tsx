@@ -74,7 +74,7 @@ export default function AgentChatPanel() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': \`Bearer \${DEEPSEEK_KEY}\`
+            'Authorization': `Bearer ${DEEPSEEK_KEY}`
           },
           body: JSON.stringify({
             model: 'deepseek-chat',
@@ -146,7 +146,7 @@ export default function AgentChatPanel() {
       console.error(err);
       setMessages((prev) => [
         ...prev,
-        { id: nextId(), type: 'system', text: \`API Error: \${err.message}. If using Claude, it might be a CORS issue. Try DeepSeek instead.\`, timestamp: Date.now() },
+        { id: nextId(), type: 'system', text: `API Error: ${err.message}. If using Claude, it might be a CORS issue. Try DeepSeek instead.`, timestamp: Date.now() },
       ]);
     } finally {
       setIsLoading(false);
@@ -184,18 +184,18 @@ export default function AgentChatPanel() {
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => (
-          <div key={msg.id} className={\`flex flex-col max-w-[85%] \${msg.type === 'user' ? 'self-end items-end ml-auto' : 'self-start items-start'}\`}>
+          <div key={msg.id} className={`flex flex-col max-w-[85%] ${msg.type === 'user' ? 'self-end items-end ml-auto' : 'self-start items-start'}`}>
             {msg.type === 'system' && (
               <span className="text-[10px] text-red-400 mb-1 font-mono uppercase tracking-widest px-1">System Error</span>
             )}
             <div
-              className={\`px-3 py-2 rounded-lg text-[13px] \${
+              className={`px-3 py-2 rounded-lg text-[13px] ${
                 msg.type === 'user' 
                   ? 'bg-blue-600 text-white rounded-br-none' 
                   : msg.type === 'system'
                     ? 'bg-red-900/30 border border-red-800 text-red-200'
                     : 'bg-[#2a2d36] text-gray-200 border border-[#3a3d46] rounded-bl-none'
-              }\`}
+              }`}
               style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}
             >
               {msg.text}
