@@ -259,6 +259,46 @@ function executeCommandAction(
           set({ selection: [] })
           break
 
+        case 'filterThreshold': {
+          const domain = args[0]
+          const min = parseFloat(args[1])
+          const max = parseFloat(args[2])
+          
+          set((state) => {
+            if (!state.currentData || !state.currentData.data.sequences) return state
+            const seqs = state.currentData.data.sequences
+            // Find IDs that match the threshold
+            const matchedIds = seqs
+              .filter((s: any) => s[domain] >= min && s[domain] <= max)
+              .map((s: any) => s.id)
+            
+            return { selection: matchedIds }
+          })
+          break
+        }
+
+        case 'findMotif': {
+          const motif = args[0] as string
+          set((state) => {
+            if (!state.currentData || !state.currentData.data.sequences) return state
+            const seqs = state.currentData.data.sequences
+            const seqString = seqs.map((s: any) => s.base).join('')
+            const index = seqString.indexOf(motif)
+            
+            if (index !== -1) {
+              // Found!
+              const targetSeq = seqs[index]
+              return { 
+                playheadPosition: targetSeq.id,
+                selection: seqs.slice(index, index + motif.length).map((s: any) => s.id),
+                lookAtTarget: { x: targetSeq.x, y: targetSeq.y, z: targetSeq.z }
+              }
+            }
+            return state // not found
+          })
+          break
+        }
+
         default:
           throw new Error(`Unknown Data action: ${action}`)
       }
@@ -291,6 +331,23 @@ function executeCommandAction(
         case 'toggleTurntable':
           set((state) => ({ isTurntableActive: !state.isTurntableActive }))
           break
+
+        case 'setWindow': {
+          const start = parseInt(args[0])
+          const end = parseInt(args[1])
+          set({ windowStart: start, windowEnd: end })
+          break
+        }
+
+        case 'lookAt': {
+          const x = parseFloat(args[0])
+          const y = parseFloat(args[1])
+          const z = parseFloat(args[2])
+          if (!isNaN(x) && !isNaN(y) && !isNaN(z)) {
+            set({ lookAtTarget: { x, y, z } })
+          }
+          break
+        }
 
         default:
           throw new Error(`Unknown Viewport action: ${action}`)
@@ -366,6 +423,11 @@ export const useCommandStore = create<CommandStore>((set, get) => ({
   // Viewport
   isGridVisible: true,
   isTurntableActive: false,
+
+  // Windowing & LookAt
+  windowStart: null,
+  windowEnd: null,
+  lookAtTarget: null,
 
   setDockviewApi: (api) => set({ dockviewApi: api }),
 

@@ -11,6 +11,9 @@ export default function TimelineScrubber() {
   const currentData = useCommandStore((state) => state.currentData as any)
   const backbone = useCommandStore((state) => state.backbone)
   const playheadPosition = useCommandStore((state) => Math.round(state.playheadPosition))
+  const windowStart = useCommandStore((state) => state.windowStart)
+  const windowEnd = useCommandStore((state) => state.windowEnd)
+  const executeCommand = useCommandStore((state) => state.executeCommand)
 
   const timelineRef = useRef<HTMLDivElement>(null)
   const rangeTrackRef = useRef<HTMLDivElement>(null)
@@ -26,9 +29,9 @@ export default function TimelineScrubber() {
 
   const totalItems = items.length > 0 ? items.length : 1;
 
-  // Range State
-  const [rangeStart, setRangeStart] = useState(1);
-  const [rangeEnd, setRangeEnd] = useState(totalItems);
+  // Global Range State
+  const rangeStart = windowStart ?? 1;
+  const rangeEnd = windowEnd ?? totalItems;
 
   // Range Dragging State
   const [dragMode, setDragMode] = useState<'none' | 'pan' | 'left-resize' | 'right-resize'>('none')
@@ -37,14 +40,10 @@ export default function TimelineScrubber() {
 
   // Sync range if items change completely
   useEffect(() => {
-    if (totalItems > 0 && rangeEnd > totalItems) {
-      setRangeStart(1);
-      setRangeEnd(totalItems);
-    } else if (totalItems > 0 && rangeStart === 1 && rangeEnd === 1 && totalItems > 1) {
-      setRangeStart(1);
-      setRangeEnd(totalItems);
+    if (totalItems > 0 && (rangeEnd > totalItems || (rangeStart === 1 && rangeEnd === 1 && totalItems > 1))) {
+      executeCommand(`Viewport.setWindow(1, ${totalItems})`);
     }
-  }, [totalItems, rangeEnd, rangeStart]);
+  }, [totalItems, rangeEnd, rangeStart, executeCommand]);
 
   // --- Main Timeline Scrubbing ---
   const handleTimelineInteraction = useCallback((clientX: number) => {
@@ -101,8 +100,7 @@ export default function TimelineScrubber() {
           newEnd = Math.max(newStart + 1, Math.min(newEnd + deltaUnits, totalItems))
         }
 
-        setRangeStart(newStart)
-        setRangeEnd(newEnd)
+        executeCommand(`Viewport.setWindow(${newStart}, ${newEnd})`);
       }
     }
 
@@ -120,7 +118,7 @@ export default function TimelineScrubber() {
       document.removeEventListener('mousemove', handleGlobalMouseMove)
       document.removeEventListener('mouseup', handleGlobalMouseUp)
     }
-  }, [isScrubbing, dragMode, handleTimelineInteraction, totalItems, rangeStart, rangeEnd])
+  }, [isScrubbing, dragMode, handleTimelineInteraction, totalItems, rangeStart, rangeEnd, executeCommand])
 
   if (items.length === 0) {
     return (
@@ -183,7 +181,7 @@ export default function TimelineScrubber() {
               >
                 {/* Base Letter (if zoomed in enough) */}
                 {showBase && (
-                  <div className="text-[12px] text-white font-bold mb-3">{baseChar}</div>
+                  <div className="text-[12px] text-white font-bold mb-10">{baseChar}</div>
                 )}
                 
                 {/* Tick Mark */}
@@ -198,6 +196,20 @@ export default function TimelineScrubber() {
               </div>
             )
           })}
+        </div>
+        
+        {/* WAVEFORM TRACK */}
+        <div className="absolute inset-x-0 bottom-6 h-8 opacity-60 pointer-events-none">
+          <svg width="100%" height="100%" preserveAspectRatio="none">
+            {items.slice(rangeStart - 1, rangeEnd).map((item: any, i: number, arr: any[]) => {
+              if (arr.length > 500 && i % Math.ceil(arr.length / 500) !== 0) return null; // sample if too dense
+              const x = (i / (arr.length - 1)) * 100;
+              const y = 100 - ((item.value || 0.5) * 100);
+              return (
+                <circle key={i} cx={`${x}%`} cy={`${y}%`} r="1.5" fill="#4ceb9b" />
+              )
+            })}
+          </svg>
         </div>
 
         {/* Playhead */}
@@ -231,7 +243,7 @@ export default function TimelineScrubber() {
         <input 
           type="number" 
           value={rangeStart}
-          onChange={(e) => setRangeStart(Math.max(1, Math.min(Number(e.target.value), rangeEnd - 1)))}
+          onChange={(e) => executeCommand(`Viewport.setWindow(${Math.max(1, Math.min(Number(e.target.value), rangeEnd - 1))}, ${rangeEnd})`)}
           className="w-16 h-6 bg-[#222222] text-white border border-[#555] text-center text-[12px] outline-none focus:border-blue-500 font-mono rounded-sm"
         />
 
@@ -274,7 +286,7 @@ export default function TimelineScrubber() {
         <input 
           type="number" 
           value={rangeEnd}
-          onChange={(e) => setRangeEnd(Math.max(rangeStart + 1, Math.min(Number(e.target.value), totalItems)))}
+          onChange={(e) => executeCommand(`Viewport.setWindow(${rangeStart}, ${Math.max(rangeStart + 1, Math.min(Number(e.target.value), totalItems))})`)}
           className="w-16 h-6 bg-[#222222] text-white border border-[#555] text-center text-[12px] outline-none focus:border-blue-500 font-mono rounded-sm"
         />
 
