@@ -1,24 +1,22 @@
 /**
- * TimelineScrubber Component
- * 1D timeline with sequence letters and waveform visualization
- * Interacts ONLY via Timeline.setPlayhead(id) commands
- * Adapted for Dockview panel integration
+ * TimelineScrubber Component (Maya-Style)
+ * Authentic replica of the Autodesk Maya Time Slider and Range Slider.
+ * Interacts ONLY via Timeline.setPlayhead(id) commands.
  */
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import { useCommandStore } from '../store/useCommandStore'
 
 export default function TimelineScrubber() {
   const currentData = useCommandStore((state) => state.currentData as any)
   const backbone = useCommandStore((state) => state.backbone)
-  const playheadPosition = useCommandStore((state) => state.playheadPosition)
-  const executeCommand = useCommandStore((state) => state.executeCommand)
+  const playheadPosition = useCommandStore((state) => Math.round(state.playheadPosition))
 
   const timelineRef = useRef<HTMLDivElement>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [hoveredId, setHoveredId] = useState<number | null>(null)
-
-  // Determine which data to use
+  const rangeTrackRef = useRef<HTMLDivElement>(null)
+  
+  const [isScrubbing, setIsScrubbing] = useState(false)
+  
   const hasSequences = currentData?.data?.sequences && currentData.data.sequences.length > 0;
   const hasPDB = backbone && backbone.length > 0;
   
@@ -26,230 +24,267 @@ export default function TimelineScrubber() {
     ? backbone.map((atom: any, i: number) => ({ id: i + 1, base: `${i + 1}`, value: 1 }))
     : (hasSequences ? currentData.data.sequences : []);
 
+  const totalItems = items.length > 0 ? items.length : 1;
+
   // Range State
   const [rangeStart, setRangeStart] = useState(1);
-  const [rangeEnd, setRangeEnd] = useState(items.length > 0 ? items.length : 1);
+  const [rangeEnd, setRangeEnd] = useState(totalItems);
+
+  // Range Dragging State
+  const [dragMode, setDragMode] = useState<'none' | 'pan' | 'left-resize' | 'right-resize'>('none')
+  const dragStartX = useRef(0)
+  const dragStartRange = useRef({ start: 1, end: totalItems })
 
   // Sync range if items change completely
   useEffect(() => {
-    if (items.length > 0) {
+    if (totalItems > 0 && rangeEnd > totalItems) {
       setRangeStart(1);
-      setRangeEnd(items.length);
+      setRangeEnd(totalItems);
+    } else if (totalItems > 0 && rangeStart === 1 && rangeEnd === 1 && totalItems > 1) {
+      setRangeStart(1);
+      setRangeEnd(totalItems);
     }
-  }, [items.length]);
+  }, [totalItems, rangeEnd, rangeStart]);
 
-  const visibleItems = items.filter((item: any) => item.id >= rangeStart && item.id <= rangeEnd);
-  const maxValue = Math.max(...items.map((s: any) => s.value), 1);
-
-  const handleTimelineInteraction = (clientX: number, shiftKey: boolean = false) => {
-    if (!timelineRef.current || visibleItems.length === 0) return
-
+  // --- Main Timeline Scrubbing ---
+  const handleTimelineInteraction = useCallback((clientX: number) => {
+    if (!timelineRef.current || totalItems <= 1) return
     const rect = timelineRef.current.getBoundingClientRect()
-    const x = clientX - rect.left
-    const percentage = Math.max(0, Math.min(1, x / rect.width))
+    const x = Math.max(0, Math.min(clientX - rect.left, rect.width))
+    const percentage = x / rect.width
     
     // Map percentage to the visible range
     const clickedId = Math.round(rangeStart + percentage * (rangeEnd - rangeStart))
     const clampedId = Math.max(rangeStart, Math.min(clickedId, rangeEnd))
+    
+    useCommandStore.getState().executeCommand(`Timeline.setPlayhead(${clampedId})`)
+  }, [rangeStart, rangeEnd, totalItems])
 
-    const state = useCommandStore.getState()
-    if (shiftKey) {
-      const currentSelection = Array.isArray(state.selection) ? [...state.selection] : []
-      if (!currentSelection.includes(clampedId) && !currentSelection.includes(`${clampedId}`)) {
-        currentSelection.push(clampedId)
-        state.executeCommand(`Data.select(${JSON.stringify(currentSelection)})`)
+  const handleTimelineMouseDown = (e: React.MouseEvent) => {
+    setIsScrubbing(true)
+    handleTimelineInteraction(e.clientX)
+  }
+
+  // --- Range Slider Interaction ---
+  const handleRangeMouseDown = (e: React.MouseEvent, mode: 'pan' | 'left-resize' | 'right-resize') => {
+    e.stopPropagation();
+    setDragMode(mode);
+    dragStartX.current = e.clientX;
+    dragStartRange.current = { start: rangeStart, end: rangeEnd };
+  }
+
+  // Global mouse move for both scrubbing and range sliding
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (isScrubbing) {
+        handleTimelineInteraction(e.clientX)
+      } else if (dragMode !== 'none' && rangeTrackRef.current) {
+        const rect = rangeTrackRef.current.getBoundingClientRect()
+        const deltaX = e.clientX - dragStartX.current
+        const deltaPercentage = deltaX / rect.width
+        const deltaUnits = Math.round(deltaPercentage * totalItems)
+        
+        let newStart = dragStartRange.current.start
+        let newEnd = dragStartRange.current.end
+
+        if (dragMode === 'pan') {
+          // Prevent panning out of bounds
+          let shift = deltaUnits;
+          if (newStart + shift < 1) shift = 1 - newStart;
+          if (newEnd + shift > totalItems) shift = totalItems - newEnd;
+          
+          newStart += shift;
+          newEnd += shift;
+        } else if (dragMode === 'left-resize') {
+          newStart = Math.max(1, Math.min(newStart + deltaUnits, newEnd - 1))
+        } else if (dragMode === 'right-resize') {
+          newEnd = Math.max(newStart + 1, Math.min(newEnd + deltaUnits, totalItems))
+        }
+
+        setRangeStart(newStart)
+        setRangeEnd(newEnd)
       }
-    } else {
-      state.executeCommand(`Data.select(${clampedId})`)
+    }
+
+    const handleGlobalMouseUp = () => {
+      setIsScrubbing(false)
+      setDragMode('none')
+    }
+
+    if (isScrubbing || dragMode !== 'none') {
+      document.addEventListener('mousemove', handleGlobalMouseMove)
+      document.addEventListener('mouseup', handleGlobalMouseUp)
     }
     
-    state.executeCommand(`Timeline.setPlayhead(${clampedId})`)
-  }
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true)
-    handleTimelineInteraction(e.clientX, e.shiftKey)
-  }
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) {
-      handleTimelineInteraction(e.clientX, e.shiftKey)
-    } else {
-      if (timelineRef.current && visibleItems.length > 0) {
-        const rect = timelineRef.current.getBoundingClientRect()
-        const x = e.clientX - rect.left
-        const percentage = Math.max(0, Math.min(1, x / rect.width))
-        const hoverId = Math.round(rangeStart + percentage * (rangeEnd - rangeStart))
-        setHoveredId(Math.max(rangeStart, Math.min(hoverId, rangeEnd)))
-      }
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove)
+      document.removeEventListener('mouseup', handleGlobalMouseUp)
     }
-  }
-
-  const handleMouseUp = () => setIsDragging(false)
-  const handleMouseLeave = () => {
-    setIsDragging(false)
-    setHoveredId(null)
-  }
-
-  useEffect(() => {
-    const handleGlobalMouseUp = () => setIsDragging(false)
-    document.addEventListener('mouseup', handleGlobalMouseUp)
-    return () => document.removeEventListener('mouseup', handleGlobalMouseUp)
-  }, [])
+  }, [isScrubbing, dragMode, handleTimelineInteraction, totalItems, rangeStart, rangeEnd])
 
   if (items.length === 0) {
     return (
-      <div className="timeline-scrubber timeline-empty flex items-center justify-center h-full bg-gray-900 text-gray-500">
-        <div className="timeline-empty-text">Load bio-data or PDB to see timeline</div>
+      <div className="flex items-center justify-center h-full bg-[#323232] text-gray-500 font-sans text-xs">
+        <div>Load bio-data or PDB to see timeline</div>
       </div>
     )
   }
 
-  const playheadPercentage = visibleItems.length > 1 
-    ? ((Math.max(rangeStart, Math.min(Math.round(playheadPosition), rangeEnd)) - rangeStart) / (rangeEnd - rangeStart)) * 100
-    : 0;
+  // --- Generate Ticks for Maya Ruler ---
+  const ticks = [];
+  const rangeLength = Math.max(1, rangeEnd - rangeStart);
+  
+  // Adaptive tick spacing based on zoom level
+  let minorStep = 1;
+  if (rangeLength > 100) minorStep = Math.ceil(rangeLength / 100);
+  if (rangeLength > 1000) minorStep = Math.ceil(rangeLength / 50);
+  
+  let majorStep = minorStep * 5;
+  if (rangeLength > 100) majorStep = minorStep * 10;
+  if (rangeLength > 1000) majorStep = minorStep * 5;
+
+  // Always include steps in between
+  for (let i = rangeStart; i <= rangeEnd; i += minorStep) {
+    ticks.push(i);
+  }
+  // Ensure exact start and end are drawn
+  if (!ticks.includes(rangeStart)) ticks.unshift(rangeStart);
+  if (!ticks.includes(rangeEnd)) ticks.push(rangeEnd);
+
+  const playheadPercentage = ((playheadPosition - rangeStart) / Math.max(1, rangeLength)) * 100;
+  const isPlayheadVisible = playheadPosition >= rangeStart && playheadPosition <= rangeEnd;
+
+  // Render Range Thumb boundaries
+  const thumbLeftPercent = ((rangeStart - 1) / Math.max(1, totalItems - 1)) * 100;
+  const thumbWidthPercent = ((rangeEnd - rangeStart) / Math.max(1, totalItems - 1)) * 100;
 
   return (
-    <div className="timeline-scrubber flex flex-col h-full bg-gray-900 p-3 text-white text-sm select-none">
-      <div className="timeline-header flex justify-between items-center mb-3">
-        <h2 className="timeline-title font-bold text-gray-300">Timeline Scrubber</h2>
-        <div className="timeline-position text-gray-400">
-          Position: <span className="timeline-pos-value font-mono text-white">{playheadPosition}</span> / {items.length}
-        </div>
-      </div>
-
-      {/* Range Sliders */}
-      <div className="flex gap-4 mb-3 items-center bg-gray-800 p-2 rounded border border-gray-700">
-        <span className="text-gray-400 text-xs font-semibold uppercase tracking-wider">Range View:</span>
-        <input 
-          type="range" 
-          min="1" 
-          max={items.length} 
-          value={rangeStart} 
-          onChange={(e) => setRangeStart(Math.min(Number(e.target.value), rangeEnd - 1))}
-          className="flex-1 accent-indigo-500 cursor-ew-resize"
-        />
-        <span className="font-mono text-xs w-10 text-center text-indigo-300 bg-gray-900 rounded py-1">{rangeStart}</span>
-        <span className="text-gray-500 text-xs">to</span>
-        <input 
-          type="range" 
-          min="1" 
-          max={items.length} 
-          value={rangeEnd} 
-          onChange={(e) => setRangeEnd(Math.max(Number(e.target.value), rangeStart + 1))}
-          className="flex-1 accent-indigo-500 cursor-ew-resize"
-        />
-        <span className="font-mono text-xs w-10 text-center text-indigo-300 bg-gray-900 rounded py-1">{rangeEnd}</span>
-        <button 
-          onClick={() => { setRangeStart(1); setRangeEnd(items.length); }}
-          className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs transition-colors"
-        >
-          Reset
-        </button>
-      </div>
-
-      <div
+    <div className="flex flex-col h-full bg-[#323232] text-[#dcdcdc] font-sans text-xs select-none">
+      
+      {/* --- MAYA TIME SLIDER --- */}
+      <div 
         ref={timelineRef}
-        className="timeline-track relative flex-1 min-h-[80px] bg-gray-800 rounded overflow-hidden cursor-crosshair border border-gray-700 shadow-inner"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
+        className="relative flex-1 bg-[#444444] border-t border-b border-[#222] cursor-text overflow-hidden"
+        onMouseDown={handleTimelineMouseDown}
       >
-        {/* Sequence Track - Base Letters and Numeric Axis */}
-        <div className="sequence-track absolute inset-0 flex flex-col">
-          {/* Base letters */}
-          <div className="flex-1 flex">
-            {visibleItems.map((seq: any) => {
-              const isActive = Math.round(playheadPosition) === seq.id
-              const isHovered = hoveredId === seq.id
-              const showLabel = visibleItems.length < 100;
+        {/* Ticks & Numbers */}
+        <div className="absolute inset-0 pointer-events-none">
+          {ticks.map((tickId) => {
+            const isMajor = tickId % majorStep === 0 || tickId === rangeStart || tickId === rangeEnd;
+            const leftPercent = ((tickId - rangeStart) / rangeLength) * 100;
+            const showBase = rangeLength <= 100 && tickId <= totalItems;
+            const baseChar = showBase ? items[tickId - 1]?.base : '';
 
-              return (
-                <div
-                  key={seq.id}
-                  className={`sequence-item flex-1 flex items-center justify-center border-r border-gray-700/30 text-[10px] select-none transition-colors duration-75
-                    ${isActive ? 'bg-indigo-600/40 text-indigo-200 font-bold' : 'text-gray-400'} 
-                    ${isHovered && !isActive ? 'bg-gray-700 text-white' : ''}`}
-                >
-                  {showLabel ? seq.base : ''}
-                </div>
-              )
-            })}
-          </div>
-
-          {/* Numeric Axis */}
-          <div className="flex h-4 bg-gray-900 border-t border-gray-700/50">
-            {visibleItems.map((seq: any) => {
-              // Show label if zoomed in, or at intervals if zoomed out
-              const showLabel = visibleItems.length < 50 || seq.id % Math.ceil(visibleItems.length / 20) === 0;
-              return (
-                <div key={`num-${seq.id}`} className="flex-1 border-r border-gray-700/30 flex items-end pb-[1px] justify-center text-[8px] text-gray-500 font-mono">
-                  {showLabel ? seq.id : ''}
-                </div>
-              )
-            })}
-          </div>
+            return (
+              <div 
+                key={tickId}
+                className="absolute bottom-0 flex flex-col items-center transform -translate-x-1/2"
+                style={{ left: `${leftPercent}%` }}
+              >
+                {/* Base Letter (if zoomed in enough) */}
+                {showBase && (
+                  <div className="text-[10px] text-[#cccccc] font-bold mb-3">{baseChar}</div>
+                )}
+                
+                {/* Tick Mark */}
+                <div className={`w-px bg-[#777777] ${isMajor ? 'h-3' : 'h-1.5'}`} />
+                
+                {/* Tick Number (Major only) */}
+                {isMajor && (
+                  <div className="absolute bottom-3.5 text-[9px] text-[#999999] whitespace-nowrap">
+                    {tickId}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
 
-        {/* Waveform Track - Value Visualization (Hide for PDBs) */}
-        {!hasPDB && (
-          <div className="waveform-track absolute inset-0 flex items-end pointer-events-none opacity-50">
-            {visibleItems.map((seq: any) => {
-              const isActive = Math.round(playheadPosition) === seq.id
-              const isHovered = hoveredId === seq.id
-              const barHeight = (seq.value / maxValue) * 100
-
-              return (
-                <div
-                  key={`waveform-${seq.id}`}
-                  className={`waveform-bar flex-1 mx-[1px] rounded-t-sm transition-all duration-75
-                    ${isActive ? 'bg-indigo-400' : 'bg-green-500'} 
-                    ${isHovered && !isActive ? 'bg-green-400' : ''}`}
-                  style={{ height: `${barHeight}%` }}
-                />
-              )
-            })}
-          </div>
-        )}
-
-        {/* Playhead Line */}
-        {playheadPosition >= rangeStart && playheadPosition <= rangeEnd && (
-          <div
-            className="playhead-line absolute top-0 bottom-0 w-[2px] bg-indigo-500 pointer-events-none z-10"
+        {/* Playhead */}
+        {isPlayheadVisible && (
+          <div 
+            className="absolute top-0 bottom-0 pointer-events-none z-10"
             style={{ left: `${playheadPercentage}%` }}
           >
-            <div className="playhead-handle absolute -top-1 -left-[5px] w-3 h-3 bg-indigo-500 rounded-sm shadow-[0_0_10px_rgba(99,102,241,0.8)]" />
-          </div>
-        )}
-
-        {/* Hover Tooltip */}
-        {hoveredId && !isDragging && hoveredId >= rangeStart && hoveredId <= rangeEnd && (
-          <div
-            className="timeline-tooltip absolute top-2 bg-black/90 border border-gray-700 text-white p-2 rounded text-xs pointer-events-none z-20 whitespace-nowrap transform -translate-x-1/2 shadow-lg"
-            style={{ left: `${((hoveredId - rangeStart) / (rangeEnd - rangeStart)) * 100}%` }}
-          >
-            <div className="font-mono text-indigo-300 font-bold mb-1">Index: {hoveredId}</div>
-            {hasPDB ? (
-              <div className="text-gray-300">Atom: {items[hoveredId - 1]?.base}</div>
-            ) : (
-              <>
-                <div className="text-gray-300">Base: {items[hoveredId - 1]?.base}</div>
-                <div className="text-gray-300">Value: {items[hoveredId - 1]?.value?.toFixed(3)}</div>
-              </>
-            )}
+            {/* Red Line */}
+            <div className="absolute inset-y-0 w-px bg-red-500 transform -translate-x-1/2" />
+            {/* Red Box */}
+            <div className="absolute top-0 transform -translate-x-1/2 bg-red-600/90 border border-red-800 text-white text-[10px] px-1 py-0.5 min-w-[20px] text-center font-bold">
+              {playheadPosition}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Timeline Controls */}
-      <div className="timeline-controls flex justify-between items-center mt-3">
-        <div className="timeline-hint text-gray-500 text-xs">Click or drag to scrub • Use sliders to zoom range</div>
-        <div className="timeline-btns flex gap-2">
-          <button onClick={() => executeCommand('Timeline.setPlayhead(1)')} className="px-4 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded text-xs transition-colors">Start</button>
-          <button onClick={() => executeCommand(`Timeline.setPlayhead(${items.length})`)} className="px-4 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded text-xs transition-colors">End</button>
-          <button onClick={() => executeCommand('Timeline.reset()')} className="px-4 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded text-xs text-red-400 transition-colors">Reset</button>
+      {/* --- MAYA RANGE SLIDER --- */}
+      <div className="flex items-center bg-[#323232] h-8 px-2 gap-2 border-b border-[#222]">
+        
+        {/* Absolute Start Box */}
+        <input 
+          type="number" 
+          value={1} 
+          disabled
+          className="w-14 h-5 bg-[#222222] text-[#888888] border border-[#111] text-center text-[11px] outline-none font-mono rounded-sm"
+        />
+
+        {/* Playback Start Box */}
+        <input 
+          type="number" 
+          value={rangeStart}
+          onChange={(e) => setRangeStart(Math.max(1, Math.min(Number(e.target.value), rangeEnd - 1)))}
+          className="w-14 h-5 bg-[#222222] text-[#eeeeee] border border-[#444] text-center text-[11px] outline-none focus:border-blue-500 font-mono rounded-sm"
+        />
+
+        {/* Range Track */}
+        <div 
+          ref={rangeTrackRef}
+          className="flex-1 h-4 relative bg-[#1a1a1a] border border-[#111] mx-1 rounded-sm shadow-inner"
+        >
+          {/* Draggable Thumb */}
+          <div 
+            className="absolute top-0 bottom-0 bg-[#555555] hover:bg-[#666666] border border-[#777] cursor-grab active:cursor-grabbing rounded-[1px] transition-colors duration-75"
+            style={{ 
+              left: `${thumbLeftPercent}%`, 
+              width: `${thumbWidthPercent}%` 
+            }}
+            onMouseDown={(e) => handleRangeMouseDown(e, 'pan')}
+          >
+            {/* Left Handle */}
+            <div 
+              className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-[#888888] z-10 rounded-l-[1px]"
+              onMouseDown={(e) => handleRangeMouseDown(e, 'left-resize')}
+            />
+            {/* Center pattern / dots (Maya styling) */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none">
+              <div className="flex gap-[2px]">
+                <div className="w-[2px] h-[6px] bg-black"></div>
+                <div className="w-[2px] h-[6px] bg-black"></div>
+                <div className="w-[2px] h-[6px] bg-black"></div>
+              </div>
+            </div>
+            {/* Right Handle */}
+            <div 
+              className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-[#888888] z-10 rounded-r-[1px]"
+              onMouseDown={(e) => handleRangeMouseDown(e, 'right-resize')}
+            />
+          </div>
         </div>
+
+        {/* Playback End Box */}
+        <input 
+          type="number" 
+          value={rangeEnd}
+          onChange={(e) => setRangeEnd(Math.max(rangeStart + 1, Math.min(Number(e.target.value), totalItems)))}
+          className="w-14 h-5 bg-[#222222] text-[#eeeeee] border border-[#444] text-center text-[11px] outline-none focus:border-blue-500 font-mono rounded-sm"
+        />
+
+        {/* Absolute End Box */}
+        <input 
+          type="number" 
+          value={totalItems}
+          disabled
+          className="w-14 h-5 bg-[#222222] text-[#888888] border border-[#111] text-center text-[11px] outline-none font-mono rounded-sm"
+        />
       </div>
     </div>
   )
