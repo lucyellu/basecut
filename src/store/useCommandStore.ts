@@ -284,6 +284,14 @@ function executeCommandAction(
           break
         }
 
+        case 'toggleGrid':
+          set((state) => ({ isGridVisible: !state.isGridVisible }))
+          break
+
+        case 'toggleTurntable':
+          set((state) => ({ isTurntableActive: !state.isTurntableActive }))
+          break
+
         default:
           throw new Error(`Unknown Viewport action: ${action}`)
       }
@@ -292,20 +300,36 @@ function executeCommandAction(
     case 'Camera':
       switch (action) {
         case 'update': {
-          const camId = args[0] as string
-          const updates = typeof args[1] === 'string' ? JSON.parse(args[1]) : args[1]
-          
+          const id = args[0]
+          const payload = args[1]
           set((state) => {
-            if (!state.currentData || !state.currentData.data.cameras) return state
-            const newCameras = state.currentData.data.cameras.map((c: any) => 
-              c.id === camId || c.name === camId ? { ...c, ...updates } : c
+            if (!state.currentData?.data?.cameras) return {}
+            const cameras = state.currentData.data.cameras.map((cam: any) => 
+              (cam.id === id || cam.name === id) ? { ...cam, ...payload } : cam
             )
             return {
               currentData: {
                 ...state.currentData,
                 data: {
                   ...state.currentData.data,
-                  cameras: newCameras
+                  cameras
+                }
+              }
+            }
+          })
+          break
+        }
+        case 'updateAll': {
+          const payload = args[0]
+          set((state) => {
+            if (!state.currentData?.data?.cameras) return {}
+            const cameras = state.currentData.data.cameras.map((cam: any) => ({ ...cam, ...payload }))
+            return {
+              currentData: {
+                ...state.currentData,
+                data: {
+                  ...state.currentData.data,
+                  cameras
                 }
               }
             }
@@ -338,6 +362,10 @@ export const useCommandStore = create<CommandStore>((set, get) => ({
   ligands: [],
   edges: [],
   isLoadingPDB: false,
+
+  // Viewport
+  isGridVisible: true,
+  isTurntableActive: false,
 
   setDockviewApi: (api) => set({ dockviewApi: api }),
 

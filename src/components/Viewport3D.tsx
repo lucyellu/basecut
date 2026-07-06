@@ -18,6 +18,8 @@ function SceneContent() {
   const backbone = useCommandStore((state) => state.backbone)
   const ligands = useCommandStore((state) => state.ligands)
   const edges = useCommandStore((state) => state.edges)
+  const isGridVisible = useCommandStore((state) => state.isGridVisible)
+  const isTurntableActive = useCommandStore((state) => state.isTurntableActive)
   const { camera } = useThree()
 
   const sequences = currentData?.data?.sequences || []
@@ -172,6 +174,8 @@ function SceneContent() {
           MIDDLE: THREE.MOUSE.PAN,
           RIGHT: THREE.MOUSE.DOLLY
         }}
+        autoRotate={isTurntableActive}
+        autoRotateSpeed={2.0}
       />
 
       {/* Lighting */}
@@ -180,7 +184,7 @@ function SceneContent() {
       <pointLight position={[-10, -10, -10]} intensity={0.5} />
 
       {/* Grid helper for spatial reference */}
-      <gridHelper args={[50, 50, '#444444', '#222222']} position={[0, 0, 0]} />
+      {isGridVisible && <gridHelper args={[50, 50, '#444444', '#222222']} position={[0, 0, 0]} />}
 
       {/* Axes helper */}
       <axesHelper args={[10]} />
@@ -334,7 +338,8 @@ export default function Viewport3D({ viewType = 'persp' }: { viewType?: 'top' | 
       
       {hasData ? (
         <Canvas
-          gl={{ antialias: true, alpha: true }}
+          id="basecut-viewport-canvas"
+          gl={{ antialias: true, alpha: true, preserveDrawingBuffer: true }}
           style={{ width: '100%', height: '100%' }}
           onPointerMissed={() => {
             const state = useCommandStore.getState()
@@ -351,9 +356,11 @@ export default function Viewport3D({ viewType = 'persp' }: { viewType?: 'top' | 
             const near = config?.near || 0.1
             const far = config?.far || 100000
             const fov = config?.fov || 50
+            const bgColor = config?.backgroundColor
 
             return (
               <>
+                {bgColor && <color attach="background" args={[bgColor]} />}
                 {currentView === 'persp' && <PerspectiveCamera makeDefault position={[50, 50, 50]} fov={fov} near={near} far={far} />}
                 {currentView === 'top' && <OrthographicCamera makeDefault position={[0, 100, 0]} zoom={20} near={near} far={far} />}
                 {currentView === 'front' && <OrthographicCamera makeDefault position={[0, 0, 100]} zoom={20} near={near} far={far} />}
