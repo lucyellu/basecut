@@ -226,6 +226,11 @@ function executeCommandAction(
 
     case 'Viewport':
       switch (action) {
+        case 'frameAll':
+          // Update frame trigger to force all viewports to frame
+          set((state) => ({ frameTrigger: state.frameTrigger + 1 }))
+          break
+
         case 'reset':
           // Placeholder for viewport reset
           break
@@ -260,6 +265,7 @@ export const useCommandStore = create<CommandStore>((set, get) => ({
   parsedHistory: [],
   lastError: null,
   commandCount: 0,
+  frameTrigger: 0,
 
   setDockviewApi: (api) => set({ dockviewApi: api }),
 

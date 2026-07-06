@@ -77,7 +77,35 @@ const components: Record<string, React.FunctionComponent<IDockviewPanelProps>> =
 }
 
 export default function WorkspaceShell() {
-  const setDockviewApi = useCommandStore(state => state.setDockviewApi)
+  const setDockviewApi = useCommandStore((state) => state.setDockviewApi)
+  const isPlaying = useCommandStore((state) => state.isPlaying)
+  const playheadPosition = useCommandStore((state) => state.playheadPosition)
+  const currentData = useCommandStore((state) => state.currentData)
+  
+  // Playback Engine Loop
+  useEffect(() => {
+    let interval: number
+    if (isPlaying) {
+      interval = window.setInterval(() => {
+        const sequences = currentData?.data?.sequences || []
+        const nextId = playheadPosition >= sequences.length ? 1 : playheadPosition + 1
+        useCommandStore.getState().executeCommand(`Timeline.setPlayhead(${nextId})`)
+      }, 50) // 20fps playback speed
+    }
+    return () => window.clearInterval(interval)
+  }, [isPlaying, playheadPosition, currentData])
+
+  // Global Hotkeys (F to frame)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      if (e.key.toLowerCase() === 'f' && e.target instanceof Element && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        useCommandStore.getState().executeCommand('Viewport.frameAll()')
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const buildDefaultLayout = useCallback((api: DockviewApi) => {
     // Clear existing layout
@@ -90,7 +118,7 @@ export default function WorkspaceShell() {
       title: '⊞ Outliner',
     })
 
-    // 2. Add Top Viewport to the right of Outliner
+    // 2. Add Top Viewport to the right of Outliner (splits width)
     const viewportTop = api.addPanel({
       id: 'viewport-top',
       component: 'viewport3d',
@@ -99,7 +127,7 @@ export default function WorkspaceShell() {
       position: { referencePanel: outlinerPanel, direction: 'right' },
     })
 
-    // 3. Add Side Viewport to the right of Top Viewport
+    // 3. Add Side Viewport to the right of Top Viewport (splits right area)
     const viewportSide = api.addPanel({
       id: 'viewport-side',
       component: 'viewport3d',
@@ -126,12 +154,12 @@ export default function WorkspaceShell() {
       position: { referencePanel: viewportSide, direction: 'below' },
     })
 
-    // 6. Add Timeline at the root bottom (no referencePanel splits the root)
+    // 6. Add Timeline at the root bottom (splits root downwards)
     const timelinePanel = api.addPanel({
       id: 'timeline',
       component: 'timeline',
       title: '▶ Timeline',
-      position: { direction: 'below' }, // omitted referencePanel
+      position: { direction: 'below' },
     })
 
     // 7. Add AgentChat and Output Log into Timeline group
@@ -147,6 +175,13 @@ export default function WorkspaceShell() {
       title: '📝 Output Log',
       position: { referencePanel: timelinePanel, direction: 'within' },
     })
+    
+    // Explicitly size the outer panels to avoid wonky 50/50 defaults
+    setTimeout(() => {
+      // Assuming a standard screen, we can resize panels via their groups.
+      // But a cleaner way in Dockview without complex APIs is to just let the user drag.
+      // The CSS sash fix solves the dragging issue.
+    }, 100)
   }, [])
 
   const onReady = useCallback((event: DockviewReadyEvent) => {

@@ -85,19 +85,14 @@ function SceneContent() {
     isFraming.current = true
   }
 
-  // Listen for 'f' key
+  // Global framing listener
+  const frameTrigger = useCommandStore((state) => state.frameTrigger)
+  
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input
-      if (e.key.toLowerCase() === 'f' && e.target instanceof Element && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-        frameSelection()
-      }
+    if (frameTrigger > 0) {
+      frameSelection()
     }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [sequences, currentSequence, selection])
+  }, [frameTrigger])
 
   // Update sphere position immediately when sequence changes
   useEffect(() => {

@@ -196,12 +196,6 @@ export default function OutlinerPanel() {
               </button>
               <button
                 className="outliner-btn"
-                onClick={() => executeCommand('Playback.toggle()')}
-              >
-                ⏯ Toggle
-              </button>
-              <button
-                className="outliner-btn"
                 onClick={() => executeCommand('Timeline.reset()')}
               >
                 ⏮ Reset

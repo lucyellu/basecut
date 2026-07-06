@@ -39,6 +39,7 @@ export interface CommandState {
   // System state
   lastError: string | null
   commandCount: number
+  frameTrigger: number
 }
 
 /**

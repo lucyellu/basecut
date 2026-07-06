@@ -124,6 +124,24 @@ const TopMenu = () => {
             }}>Add Output Log</button>
             
             <div className="dropdown-divider"></div>
+
+            <button className="dropdown-item" onClick={() => {
+              if (dockviewApi) {
+                const outliner = dockviewApi.getPanel('outliner')
+                if (outliner) outliner.api.setVisible(!outliner.api.isVisible)
+              }
+              closeMenu()
+            }}>Toggle Outliner</button>
+
+            <button className="dropdown-item" onClick={() => {
+              if (dockviewApi) {
+                const timeline = dockviewApi.getPanel('timeline')
+                if (timeline) timeline.api.setVisible(!timeline.api.isVisible)
+              }
+              closeMenu()
+            }}>Toggle Bottom Panel</button>
+            
+            <div className="dropdown-divider"></div>
             
             <button className="dropdown-item" onClick={() => {
               // Trigger a reset by dispatching a custom event that WorkspaceShell listens to

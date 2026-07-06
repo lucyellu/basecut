@@ -50,6 +50,17 @@
   --shadow-glow-cyan: 0 0 12px rgba(0, 229, 255, 0.25);
 }
 
+/* Dockview Sash Adjustments */
+.dockview-theme-dark {
+  --dv-sash-size: 10px !important;
+  --dv-sash-hover-size: 10px !important;
+}
+.dv-sash:hover {
+  background: var(--accent-cyan);
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
 /* ========================================================================
    Base Reset & Typography
    ======================================================================== */
