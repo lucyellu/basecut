@@ -196,21 +196,22 @@ export default function WorkspaceShell() {
       component: 'timeline',
       title: '▶ Timeline',
       position: { direction: 'below' },
-      size: 200 // Half height default
+      size: 90 // Minimal height just for the sliders
     })
 
-    // 7. Add AgentChat and Output Log into Timeline group
-    api.addPanel({
+    // 7. Add AgentChat and Output Log below the Timeline
+    const bottomToolsPanel = api.addPanel({
       id: 'agentchat',
       component: 'agentchat',
       title: '🤖 Agent Chat',
-      position: { referencePanel: timelinePanel, direction: 'within' },
+      position: { direction: 'below' },
+      size: 200
     })
     api.addPanel({
       id: 'commandoutput',
       component: 'commandoutput',
       title: '📝 Output Log',
-      position: { referencePanel: timelinePanel, direction: 'within' },
+      position: { referencePanel: bottomToolsPanel, direction: 'within' },
     })
     
     // Explicitly size the outer panels to avoid wonky 50/50 defaults

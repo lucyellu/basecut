@@ -183,7 +183,7 @@ export default function TimelineScrubber() {
               >
                 {/* Base Letter (if zoomed in enough) */}
                 {showBase && (
-                  <div className="text-[10px] text-[#cccccc] font-bold mb-3">{baseChar}</div>
+                  <div className="text-[12px] text-white font-bold mb-3">{baseChar}</div>
                 )}
                 
                 {/* Tick Mark */}
@@ -191,7 +191,7 @@ export default function TimelineScrubber() {
                 
                 {/* Tick Number (Major only) */}
                 {isMajor && (
-                  <div className="absolute bottom-3.5 text-[9px] text-[#999999] whitespace-nowrap">
+                  <div className="absolute bottom-3.5 text-[10px] text-[#dddddd] font-semibold whitespace-nowrap">
                     {tickId}
                   </div>
                 )}
@@ -209,7 +209,7 @@ export default function TimelineScrubber() {
             {/* Red Line */}
             <div className="absolute inset-y-0 w-px bg-red-500 transform -translate-x-1/2" />
             {/* Red Box */}
-            <div className="absolute top-0 transform -translate-x-1/2 bg-red-600/90 border border-red-800 text-white text-[10px] px-1 py-0.5 min-w-[20px] text-center font-bold">
+            <div className="absolute top-0 transform -translate-x-1/2 bg-red-600/90 border border-red-800 text-white text-[12px] px-2 py-0.5 min-w-[28px] text-center font-bold shadow-md rounded-[1px]">
               {playheadPosition}
             </div>
           </div>
@@ -217,14 +217,14 @@ export default function TimelineScrubber() {
       </div>
 
       {/* --- MAYA RANGE SLIDER --- */}
-      <div className="flex items-center bg-[#323232] h-8 px-2 gap-2 border-b border-[#222]">
+      <div className="flex items-center bg-[#323232] h-10 px-2 gap-2 border-b border-[#222]">
         
         {/* Absolute Start Box */}
         <input 
           type="number" 
           value={1} 
           disabled
-          className="w-14 h-5 bg-[#222222] text-[#888888] border border-[#111] text-center text-[11px] outline-none font-mono rounded-sm"
+          className="w-16 h-6 bg-[#222222] text-[#888888] border border-[#111] text-center text-[12px] outline-none font-mono rounded-sm"
         />
 
         {/* Playback Start Box */}
@@ -232,17 +232,17 @@ export default function TimelineScrubber() {
           type="number" 
           value={rangeStart}
           onChange={(e) => setRangeStart(Math.max(1, Math.min(Number(e.target.value), rangeEnd - 1)))}
-          className="w-14 h-5 bg-[#222222] text-[#eeeeee] border border-[#444] text-center text-[11px] outline-none focus:border-blue-500 font-mono rounded-sm"
+          className="w-16 h-6 bg-[#222222] text-white border border-[#555] text-center text-[12px] outline-none focus:border-blue-500 font-mono rounded-sm"
         />
 
         {/* Range Track */}
         <div 
           ref={rangeTrackRef}
-          className="flex-1 h-4 relative bg-[#1a1a1a] border border-[#111] mx-1 rounded-sm shadow-inner"
+          className="flex-1 h-6 relative bg-[#1a1a1a] border border-[#111] mx-1 rounded-sm shadow-inner"
         >
           {/* Draggable Thumb */}
           <div 
-            className="absolute top-0 bottom-0 bg-[#555555] hover:bg-[#666666] border border-[#777] cursor-grab active:cursor-grabbing rounded-[1px] transition-colors duration-75"
+            className="absolute top-0 bottom-0 bg-[#666666] hover:bg-[#7a7a7a] border border-[#999] cursor-grab active:cursor-grabbing rounded-[2px] transition-colors duration-75 shadow-sm"
             style={{ 
               left: `${thumbLeftPercent}%`, 
               width: `${thumbWidthPercent}%` 
@@ -251,7 +251,7 @@ export default function TimelineScrubber() {
           >
             {/* Left Handle */}
             <div 
-              className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-[#888888] z-10 rounded-l-[1px]"
+              className="absolute left-0 top-0 bottom-0 w-3 cursor-ew-resize hover:bg-[#999999] z-10 rounded-l-[1px]"
               onMouseDown={(e) => handleRangeMouseDown(e, 'left-resize')}
             />
             {/* Center pattern / dots (Maya styling) */}
@@ -264,7 +264,7 @@ export default function TimelineScrubber() {
             </div>
             {/* Right Handle */}
             <div 
-              className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-[#888888] z-10 rounded-r-[1px]"
+              className="absolute right-0 top-0 bottom-0 w-3 cursor-ew-resize hover:bg-[#999999] z-10 rounded-r-[1px]"
               onMouseDown={(e) => handleRangeMouseDown(e, 'right-resize')}
             />
           </div>
@@ -275,7 +275,7 @@ export default function TimelineScrubber() {
           type="number" 
           value={rangeEnd}
           onChange={(e) => setRangeEnd(Math.max(rangeStart + 1, Math.min(Number(e.target.value), totalItems)))}
-          className="w-14 h-5 bg-[#222222] text-[#eeeeee] border border-[#444] text-center text-[11px] outline-none focus:border-blue-500 font-mono rounded-sm"
+          className="w-16 h-6 bg-[#222222] text-white border border-[#555] text-center text-[12px] outline-none focus:border-blue-500 font-mono rounded-sm"
         />
 
         {/* Absolute End Box */}
@@ -283,7 +283,7 @@ export default function TimelineScrubber() {
           type="number" 
           value={totalItems}
           disabled
-          className="w-14 h-5 bg-[#222222] text-[#888888] border border-[#111] text-center text-[11px] outline-none font-mono rounded-sm"
+          className="w-16 h-6 bg-[#222222] text-[#888888] border border-[#111] text-center text-[12px] outline-none font-mono rounded-sm"
         />
       </div>
     </div>
