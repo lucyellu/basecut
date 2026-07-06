@@ -210,7 +210,7 @@ export default function AgentChatPanel() {
             </div>
             {msg.command && (
               <div className="mt-1 text-[10px] font-mono text-gray-500 bg-[#111] px-2 py-1 rounded border border-[#222]">
-                > {msg.command}
+                {'>'} {msg.command}
               </div>
             )}
           </div>
