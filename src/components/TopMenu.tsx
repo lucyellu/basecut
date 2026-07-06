@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useCommandStore } from '../store/useCommandStore';
+import PlayblastModal from './PlayblastModal';
 
 const TopMenu = () => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [isPlayblastOpen, setIsPlayblastOpen] = useState(false);
   const executeCommand = useCommandStore(state => state.executeCommand);
   const dockviewApi = useCommandStore(state => state.dockviewApi);
 
@@ -45,6 +47,8 @@ const TopMenu = () => {
             <button className="dropdown-item" onClick={() => handleAction("Data.loadBioData('bio-data-2026-07-05.json')")}>Load Default Bio-Data</button>
             <button className="dropdown-item" onClick={() => handleAction("Data.clear()")}>Clear Data</button>
             <div className="dropdown-divider"></div>
+            <button className="dropdown-item" onClick={() => { setIsPlayblastOpen(true); closeMenu(); }}>Export Playblast...</button>
+            <div className="dropdown-divider"></div>
             <button className="dropdown-item" onClick={() => window.close()}>Exit</button>
           </div>
         )}
@@ -81,6 +85,8 @@ const TopMenu = () => {
               window.dispatchEvent(event);
               closeMenu();
             }}>Frame Selection (F)</button>
+            <button className="dropdown-item" onClick={() => handleAction("Viewport.toggleGrid()")}>Toggle Grid</button>
+            <button className="dropdown-item" onClick={() => handleAction("Viewport.toggleTurntable()")}>Toggle Turntable (Playblast)</button>
           </div>
         )}
       </div>
@@ -169,6 +175,9 @@ const TopMenu = () => {
           </div>
         )}
       </div>
+      
+      {/* Playblast Modal Render */}
+      <PlayblastModal isOpen={isPlayblastOpen} onClose={() => setIsPlayblastOpen(false)} />
     </div>
   );
 };

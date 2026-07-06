@@ -9,6 +9,7 @@ export default function DetailsPanel(_props: IDockviewPanelProps) {
 
   const [activeItem, setActiveItem] = useState<any>(null)
   const [itemType, setItemType] = useState<'camera' | 'sequence' | null>(null)
+  const [applyToAll, setApplyToAll] = useState(false)
 
   useEffect(() => {
     if (!selection || selection.length === 0 || !currentData) {
@@ -50,11 +51,18 @@ export default function DetailsPanel(_props: IDockviewPanelProps) {
   }
 
   const handleCameraUpdate = (field: string, value: any) => {
-    const val = typeof value === 'string' ? parseFloat(value) : value
-    if (isNaN(val)) return
+    let val = value
+    if (field !== 'backgroundColor') {
+      val = typeof value === 'string' ? parseFloat(value) : value
+      if (isNaN(val)) return
+    }
     
     // Dispatch command
-    executeCommand(`Camera.update('${activeItem.id}', ${JSON.stringify({ [field]: val })})`)
+    if (applyToAll) {
+      executeCommand(`Camera.updateAll(${JSON.stringify({ [field]: val })})`)
+    } else {
+      executeCommand(`Camera.update('${activeItem.id}', ${JSON.stringify({ [field]: val })})`)
+    }
   }
 
   return (
@@ -67,6 +75,17 @@ export default function DetailsPanel(_props: IDockviewPanelProps) {
 
       {itemType === 'camera' && (
         <div className="details-form">
+          <div style={{ marginBottom: '16px', paddingBottom: '8px', borderBottom: '1px solid #222', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input 
+              type="checkbox" 
+              id="applyAll" 
+              checked={applyToAll} 
+              onChange={e => setApplyToAll(e.target.checked)} 
+              style={{ accentColor: '#4ceb9b' }}
+            />
+            <label htmlFor="applyAll" style={{ margin: 0, color: '#fff', cursor: 'pointer' }}>Apply to all cameras</label>
+          </div>
+
           <div style={{ marginBottom: '8px' }}>
             <label style={{ display: 'block', marginBottom: '4px' }}>Camera Type</label>
             <input type="text" disabled value={activeItem.type} style={{ background: '#161923', border: '1px solid #282d3f', color: '#fff', padding: '4px', width: '100%', borderRadius: '4px' }} />
@@ -103,6 +122,16 @@ export default function DetailsPanel(_props: IDockviewPanelProps) {
               />
             </div>
           )}
+
+          <div style={{ marginBottom: '8px', marginTop: '12px' }}>
+            <label style={{ display: 'block', marginBottom: '4px' }}>Background Color</label>
+            <input 
+              type="color" 
+              value={activeItem.backgroundColor || '#000000'} 
+              onChange={(e) => handleCameraUpdate('backgroundColor', e.target.value)}
+              style={{ background: '#1a1d27', border: '1px solid #282d3f', cursor: 'pointer', padding: '0', width: '100%', height: '28px', borderRadius: '4px' }} 
+            />
+          </div>
         </div>
       )}
 

@@ -46,6 +46,10 @@ export interface CommandState {
   ligands: any[]
   edges: any[]
   isLoadingPDB: boolean
+
+  // Viewport
+  isGridVisible: boolean
+  isTurntableActive: boolean
 }
 
 /**
