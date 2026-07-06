@@ -21,7 +21,7 @@ export default function TimelineScrubber() {
   const maxValue = Math.max(...sequences.map((s: any) => s.value), 1)
 
   // Handle timeline click/drag
-  const handleTimelineInteraction = (clientX: number) => {
+  const handleTimelineInteraction = (clientX: number, shiftKey: boolean = false) => {
     if (!timelineRef.current || sequences.length === 0) return
 
     const rect = timelineRef.current.getBoundingClientRect()
@@ -32,17 +32,31 @@ export default function TimelineScrubber() {
     const clampedId = Math.max(1, Math.min(clickedId, sequences.length))
 
     // ⚡ CRITICAL: Fire command, don't mutate state directly
-    executeCommand(`Timeline.setPlayhead(${clampedId})`)
+    const state = useCommandStore.getState()
+    
+    // Select the node in the timeline
+    if (shiftKey) {
+      // Get current selection array and add this ID if not present
+      const currentSelection = Array.isArray(state.selection) ? [...state.selection] : []
+      if (!currentSelection.includes(clampedId) && !currentSelection.includes(`${clampedId}`)) {
+        currentSelection.push(clampedId)
+        state.executeCommand(`Data.select(${JSON.stringify(currentSelection)})`)
+      }
+    } else {
+      state.executeCommand(`Data.select(${clampedId})`)
+    }
+    
+    state.executeCommand(`Timeline.setPlayhead(${clampedId})`)
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true)
-    handleTimelineInteraction(e.clientX)
+    handleTimelineInteraction(e.clientX, e.shiftKey)
   }
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isDragging) {
-      handleTimelineInteraction(e.clientX)
+      handleTimelineInteraction(e.clientX, e.shiftKey)
     } else {
       // Update hover state
       if (timelineRef.current && sequences.length > 0) {

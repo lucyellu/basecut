@@ -44,14 +44,22 @@ function SceneContent() {
       const box = new THREE.Box3()
       let count = 0
       sequences.forEach((seq: any) => {
-        if (selection.includes(seq.id)) {
+        if (selection.includes(seq.id) || selection.includes(`${seq.id}`)) {
           box.expandByPoint(new THREE.Vector3(seq.x, seq.y, seq.z))
           count++
         }
       })
       if (count > 0) {
         box.getCenter(center)
-        boundingSphereRadius = count === 1 ? 20 : box.getBoundingSphere(new THREE.Sphere()).radius
+        boundingSphereRadius = count === 1 ? 5 : box.getBoundingSphere(new THREE.Sphere()).radius
+      } else {
+        // Fallback to entire scene if selection mismatch
+        const fbBox = new THREE.Box3()
+        sequences.forEach((seq: any) => {
+          fbBox.expandByPoint(new THREE.Vector3(seq.x, seq.y, seq.z))
+        })
+        fbBox.getCenter(center)
+        boundingSphereRadius = fbBox.getBoundingSphere(new THREE.Sphere()).radius
       }
     } else {
       // Frame entire scene
