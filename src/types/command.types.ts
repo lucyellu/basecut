@@ -47,6 +47,11 @@ export interface CommandState {
   edges: any[]
   isLoadingPDB: boolean
 
+  // Windowing & LookAt
+  windowStart: number | null
+  windowEnd: number | null
+  lookAtTarget: { x: number, y: number, z: number } | null
+
   // Viewport
   isGridVisible: boolean
   isTurntableActive: boolean

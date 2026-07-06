@@ -20,6 +20,7 @@ function SceneContent() {
   const edges = useCommandStore((state) => state.edges)
   const isGridVisible = useCommandStore((state) => state.isGridVisible)
   const isTurntableActive = useCommandStore((state) => state.isTurntableActive)
+  const lookAtTarget = useCommandStore((state) => state.lookAtTarget)
   const { camera } = useThree()
 
   const sequences = currentData?.data?.sequences || []
@@ -112,6 +113,26 @@ function SceneContent() {
       frameSelection()
     }
   }, [frameTrigger])
+
+  // Look At listener
+  useEffect(() => {
+    if (lookAtTarget && controlsRef.current) {
+      const target = new THREE.Vector3(lookAtTarget.x, lookAtTarget.y, lookAtTarget.z)
+      frameTargetCenter.current.copy(target)
+      
+      const currentDir = camera.position.clone().sub(controlsRef.current.target).normalize()
+      if (currentDir.lengthSq() < 0.1) currentDir.set(0, 0, 1)
+      
+      // Fixed zoom distance for lookAt
+      const lookDistance = 30
+      frameTargetCamPos.current.copy(target).add(currentDir.multiplyScalar(lookDistance))
+      
+      const screenMin = Math.min(window.innerWidth, window.innerHeight)
+      frameTargetZoom.current = screenMin / lookDistance
+      
+      isFraming.current = true
+    }
+  }, [lookAtTarget])
 
   // Update sphere position immediately when sequence changes
   useEffect(() => {

@@ -19,6 +19,7 @@ import TimelineScrubber from './TimelineScrubber'
 import AgentChatPanel from './AgentChatPanel'
 import CommandOutputWindow from './CommandOutputWindow'
 import DetailsPanel from './DetailsPanel'
+import MacroTimeline from './MacroTimeline'
 import DataPanel from './DataPanel'
 import { useCommandStore } from '../store/useCommandStore'
 
@@ -47,6 +48,14 @@ function TimelinePanelWrapper(_props: IDockviewPanelProps) {
   return (
     <div className="panel-content timeline-panel">
       <TimelineScrubber />
+    </div>
+  )
+}
+
+function MacroTimelinePanelWrapper(_props: IDockviewPanelProps) {
+  return (
+    <div className="panel-content macro-timeline-panel">
+      <MacroTimeline />
     </div>
   )
 }
@@ -90,6 +99,7 @@ const components: Record<string, React.FunctionComponent<IDockviewPanelProps>> =
   outliner: OutlinerPanelWrapper,
   viewport3d: Viewport3DPanelWrapper,
   timeline: TimelinePanelWrapper,
+  macrotimeline: MacroTimelinePanelWrapper,
   agentchat: AgentChatPanelWrapper,
   commandoutput: CommandOutputWindowWrapper,
   details: DetailsPanelWrapper,
@@ -190,16 +200,25 @@ export default function WorkspaceShell() {
       position: { referencePanel: viewportSide, direction: 'below' },
     })
 
-    // 6. Add Timeline at the root bottom (splits root downwards)
+    // 6. Add MacroTimeline directly below viewport/details
+    const macroPanel = api.addPanel({
+      id: 'macrotimeline',
+      component: 'macrotimeline',
+      title: '🧬 Genome Viewer (Tier 1)',
+      position: { direction: 'below' },
+      size: 48 // Very small minimap
+    })
+
+    // 7. Add Timeline directly below MacroTimeline
     const timelinePanel = api.addPanel({
       id: 'timeline',
       component: 'timeline',
-      title: '▶ Timeline',
-      position: { direction: 'below' },
-      size: 90 // Minimal height just for the sliders
+      title: '▶ Sequence Scrubber (Tier 2)',
+      position: { referencePanel: macroPanel, direction: 'below' },
+      size: 110 // Minimal height just for the sliders and waveform
     })
 
-    // 7. Add AgentChat and Output Log below the Timeline
+    // 8. Add AgentChat and Output Log below the Timeline
     const bottomToolsPanel = api.addPanel({
       id: 'agentchat',
       component: 'agentchat',
