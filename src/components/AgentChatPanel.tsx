@@ -85,6 +85,10 @@ export default function AgentChatPanel() {
             response_format: { type: 'json_object' }
           })
         });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`DeepSeek Error ${res.status}: ${errText}`);
+        }
         const data = await res.json();
         if (data.choices && data.choices.length > 0) {
           rawText = data.choices[0].message.content;
@@ -112,6 +116,10 @@ export default function AgentChatPanel() {
             ]
           })
         });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Claude Error ${res.status}: ${errText}`);
+        }
         const data = await res.json();
         if (data.content && data.content.length > 0) {
           rawText = data.content[0].text;
