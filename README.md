@@ -2,6 +2,8 @@
 
 A React Non-Linear Editor (NLE) application built with a strict **Command Pattern architecture**. All state mutations occur through text command strings, creating an auditable, reproducible system that mirrors professional 3D software like Maya.
 
+Try at https://basecut.netlify.app/
+
 ## 🎯 Project Philosophy
 
 This project demonstrates a "headless" command engine where UI components are "dumb" - they only fire commands and listen to state changes. This architecture:
