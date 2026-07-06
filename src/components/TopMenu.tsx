@@ -111,6 +111,10 @@ const TopMenu = () => {
               closeMenu()
             }}>Add Outliner</button>
             <button className="dropdown-item" onClick={() => {
+              if (dockviewApi) dockviewApi.addPanel({ id: `datapanel-${Date.now()}`, component: 'datapanel', title: '📂 Data Browser' })
+              closeMenu()
+            }}>Add Data Browser</button>
+            <button className="dropdown-item" onClick={() => {
               if (dockviewApi) dockviewApi.addPanel({ id: `timeline-${Date.now()}`, component: 'timeline', title: '▶ Timeline' })
               closeMenu()
             }}>Add Timeline</button>

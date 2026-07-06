@@ -19,6 +19,7 @@ import TimelineScrubber from './TimelineScrubber'
 import AgentChatPanel from './AgentChatPanel'
 import CommandOutputWindow from './CommandOutputWindow'
 import DetailsPanel from './DetailsPanel'
+import DataPanel from './DataPanel'
 import { useCommandStore } from '../store/useCommandStore'
 
 /**
@@ -74,6 +75,14 @@ function DetailsPanelWrapper(props: IDockviewPanelProps) {
   )
 }
 
+function DataPanelWrapper(_props: IDockviewPanelProps) {
+  return (
+    <div className="panel-content data-panel-wrapper" style={{ height: '100%', width: '100%', overflow: 'auto' }}>
+      <DataPanel />
+    </div>
+  )
+}
+
 /**
  * Component registry for Dockview
  */
@@ -84,6 +93,7 @@ const components: Record<string, React.FunctionComponent<IDockviewPanelProps>> =
   agentchat: AgentChatPanelWrapper,
   commandoutput: CommandOutputWindowWrapper,
   details: DetailsPanelWrapper,
+  datapanel: DataPanelWrapper,
 }
 
 export default function WorkspaceShell() {
@@ -136,6 +146,14 @@ export default function WorkspaceShell() {
       position: { referencePanel: outlinerPanel, direction: 'right' }
     })
 
+    // Add Data Browser as a tab in Details panel
+    api.addPanel({
+      id: 'datapanel',
+      component: 'datapanel',
+      title: '📂 Data Browser',
+      position: { referencePanel: detailsPanel, direction: 'within' }
+    })
+
     // 3. Add Top Viewport to the left of Details (splits 50/50, creating a center column)
     const viewportTop = api.addPanel({
       id: 'viewport-top',
@@ -178,6 +196,7 @@ export default function WorkspaceShell() {
       component: 'timeline',
       title: '▶ Timeline',
       position: { direction: 'below' },
+      size: 200 // Half height default
     })
 
     // 7. Add AgentChat and Output Log into Timeline group

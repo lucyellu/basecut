@@ -15,6 +15,9 @@ function SceneContent() {
   const currentData = useCommandStore((state) => state.currentData as any)
   const playheadPosition = useCommandStore((state) => state.playheadPosition)
   const selection = useCommandStore((state) => state.selection)
+  const backbone = useCommandStore((state) => state.backbone)
+  const ligands = useCommandStore((state) => state.ligands)
+  const edges = useCommandStore((state) => state.edges)
   const { camera } = useThree()
 
   const sequences = currentData?.data?.sequences || []
@@ -61,6 +64,13 @@ function SceneContent() {
         fbBox.getCenter(center)
         boundingSphereRadius = fbBox.getBoundingSphere(new THREE.Sphere()).radius
       }
+    } else if (backbone && backbone.length > 0) {
+      const box = new THREE.Box3()
+      backbone.forEach((atom: any) => {
+        box.expandByPoint(new THREE.Vector3(atom.x, atom.y, atom.z))
+      })
+      box.getCenter(center)
+      boundingSphereRadius = box.getBoundingSphere(new THREE.Sphere()).radius
     } else {
       // Frame entire scene
       const box = new THREE.Box3()
@@ -139,7 +149,7 @@ function SceneContent() {
     }
 
     // Initialize camera position on first load
-    if (!isInitialized.current && sequences.length > 0) {
+    if (!isInitialized.current && (sequences.length > 0 || (backbone && backbone.length > 0))) {
       frameSelection()
       isInitialized.current = true
     }
@@ -185,6 +195,41 @@ function SceneContent() {
           transparent
         />
       )}
+
+      {/* PDB Backbone */}
+      {backbone && backbone.length > 0 && (
+        <Line
+          points={backbone.map((atom: any) => new THREE.Vector3(atom.x, atom.y, atom.z))}
+          color="#a2b9bc"
+          lineWidth={3}
+          opacity={0.8}
+          transparent
+        />
+      )}
+
+      {/* PDB Ligands */}
+      {ligands && ligands.length > 0 && ligands.map((ligand: any, idx: number) => (
+        <Sphere key={`ligand-${idx}`} args={[0.5, 16, 16]} position={[ligand.x, ligand.y, ligand.z]}>
+          <meshStandardMaterial color="#ff5722" />
+        </Sphere>
+      ))}
+
+      {/* PDB Edges */}
+      {edges && edges.length > 0 && edges.map((edge: any, idx: number) => {
+        const p1 = backbone[edge[0]];
+        const p2 = backbone[edge[1]];
+        if (!p1 || !p2) return null;
+        return (
+          <Line
+            key={`edge-${idx}`}
+            points={[new THREE.Vector3(p1.x, p1.y, p1.z), new THREE.Vector3(p2.x, p2.y, p2.z)]}
+            color="#607d8b"
+            lineWidth={1}
+            opacity={0.3}
+            transparent
+          />
+        )
+      })}
 
       {/* Active Base Marker - Glowing Sphere */}
       {currentSequence && (
@@ -256,7 +301,11 @@ import { useState } from 'react'
 export default function Viewport3D({ viewType = 'persp' }: { viewType?: 'top' | 'front' | 'side' | 'persp' }) {
   const currentData = useCommandStore((state) => state.currentData as any)
   const sequences = currentData?.data?.sequences || []
+  const backbone = useCommandStore((state) => state.backbone)
+  const isLoadingPDB = useCommandStore((state) => state.isLoadingPDB)
   const [currentView, setCurrentView] = useState(viewType)
+
+  const hasData = sequences.length > 0 || (backbone && backbone.length > 0)
 
   return (
     <div className="viewport-3d" style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -283,7 +332,7 @@ export default function Viewport3D({ viewType = 'persp' }: { viewType?: 'top' | 
         </select>
       </div>
       
-      {sequences.length > 0 ? (
+      {hasData ? (
         <Canvas
           gl={{ antialias: true, alpha: true }}
           style={{ width: '100%', height: '100%' }}
@@ -319,6 +368,18 @@ export default function Viewport3D({ viewType = 'persp' }: { viewType?: 'top' | 
           <div className="viewport-empty-icon">🧬</div>
           <div className="viewport-empty-text">Load bio-data to see 3D structure</div>
           <div className="viewport-empty-hint">Use Outliner → Load Bio Data</div>
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {isLoadingPDB && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.5)', zIndex: 20, color: '#fff', fontSize: '18px',
+          fontFamily: 'monospace'
+        }}>
+          Loading Structure Data...
         </div>
       )}
     </div>

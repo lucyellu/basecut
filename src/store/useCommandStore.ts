@@ -7,6 +7,7 @@
 import { create } from 'zustand'
 import type { CommandStore, ParsedCommand, CommandDomain } from '../types/command.types'
 import type { LoadedDataInfo } from '../types/data.types'
+import { parsePDB } from '../utils/pdbParser'
 
 /**
  * Strict domain whitelist for command validation
@@ -202,8 +203,47 @@ function executeCommandAction(
         }
 
         case 'clear':
-          set({ currentData: null })
+          set({ currentData: null, backbone: [], ligands: [], edges: [] })
           break
+
+        case 'predictFold': {
+          const sequenceString = args[0] as string
+          set({ isLoadingPDB: true, lastError: null, currentData: null })
+          fetch('https://api.esmatlas.com/foldSequence/v1/pdb/', {
+            method: 'POST',
+            body: sequenceString
+          })
+            .then(response => {
+              if (!response.ok) throw new Error(`HTTP ${response.status}`)
+              return response.text()
+            })
+            .then(pdbText => {
+              const { backbone, ligands, edges } = parsePDB(pdbText)
+              set({ backbone, ligands, edges, isLoadingPDB: false })
+            })
+            .catch(error => {
+              set({ lastError: `Failed to predict fold: ${error.message}`, isLoadingPDB: false })
+            })
+          break
+        }
+
+        case 'fetchPDB': {
+          const pdbId = args[0] as string
+          set({ isLoadingPDB: true, lastError: null, currentData: null })
+          fetch(`https://files.rcsb.org/download/${pdbId}.pdb`)
+            .then(response => {
+              if (!response.ok) throw new Error(`HTTP ${response.status}`)
+              return response.text()
+            })
+            .then(pdbText => {
+              const { backbone, ligands, edges } = parsePDB(pdbText)
+              set({ backbone, ligands, edges, isLoadingPDB: false })
+            })
+            .catch(error => {
+              set({ lastError: `Failed to fetch PDB: ${error.message}`, isLoadingPDB: false })
+            })
+          break
+        }
 
         case 'editSequence':
           // Placeholder for sequence editing — args[0] = sequenceId, args[1] = edits
@@ -294,6 +334,10 @@ export const useCommandStore = create<CommandStore>((set, get) => ({
   lastError: null,
   commandCount: 0,
   frameTrigger: 0,
+  backbone: [],
+  ligands: [],
+  edges: [],
+  isLoadingPDB: false,
 
   setDockviewApi: (api) => set({ dockviewApi: api }),
 

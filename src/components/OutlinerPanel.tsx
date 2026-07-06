@@ -137,12 +137,6 @@ export default function OutlinerPanel() {
               <div className="empty-state">
                 <div className="empty-icon">📂</div>
                 <div className="empty-text">No data loaded</div>
-                <button
-                  className="outliner-btn primary"
-                  onClick={() => executeCommand("Data.loadBioData('bio-data-2026-07-05.json')")}
-                >
-                  Load Bio Data
-                </button>
               </div>
             )}
           </div>

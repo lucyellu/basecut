@@ -9,9 +9,65 @@ import type { LoadedDataInfo, BioSequence } from '../types/data.types'
 
 export default function DataPanel() {
   const currentData = useCommandStore((state) => state.currentData) as LoadedDataInfo | null
+  const backbone = useCommandStore((state) => state.backbone)
   const executeCommand = useCommandStore((state) => state.executeCommand)
   const [selectedSequence, setSelectedSequence] = useState<BioSequence | null>(null)
   const [isEditing, setIsEditing] = useState(false)
+  
+  // PDB Search State
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+
+  const hasData = currentData !== null || (backbone && backbone.length > 0)
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!searchQuery.trim()) return
+
+    setIsSearching(true)
+    setSearchResults([])
+
+    try {
+      const query = {
+        query: {
+          type: "terminal",
+          service: "full_text",
+          parameters: {
+            value: searchQuery
+          }
+        },
+        return_type: "entry",
+        request_options: {
+          paginate: {
+            start: 0,
+            rows: 5
+          }
+        }
+      }
+
+      const res = await fetch('https://search.rcsb.org/rcsbsearch/v2/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(query)
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.result_set) {
+          setSearchResults(data.result_set)
+        } else {
+          setSearchResults([])
+        }
+      } else {
+        setSearchResults([])
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsSearching(false)
+    }
+  }
 
   const handleLoadBioData = () => {
     executeCommand('Data.loadBioData(bio-data-2026-07-05.json)')
@@ -35,7 +91,7 @@ export default function DataPanel() {
     <div className="data-panel bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-white">Data Management</h2>
-        {currentData && (
+        {hasData && (
           <button
             onClick={handleClearData}
             className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
@@ -47,6 +103,51 @@ export default function DataPanel() {
 
       {/* Data Loading Options */}
       <div className="space-y-3 mb-6">
+        <button
+          onClick={() => executeCommand("Data.fetchPDB('3GOU')")}
+          className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors font-semibold shadow-[0_0_15px_rgba(79,70,229,0.5)]"
+        >
+          🩸 Load Hemoglobin (3GOU)
+        </button>
+
+        {/* PDB Search */}
+        <div className="bg-gray-900/50 border border-gray-700 rounded p-4">
+          <h3 className="text-sm font-semibold text-gray-300 mb-2">Search PDB Database</h3>
+          <form onSubmit={handleSearch} className="flex gap-2 mb-3">
+            <input
+              type="text"
+              placeholder="e.g. insulin, 1CRN..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 px-3 py-2 bg-gray-700 text-white placeholder-gray-400 rounded text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="submit"
+              disabled={isSearching}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded transition-colors text-sm font-semibold"
+            >
+              {isSearching ? '...' : 'Search'}
+            </button>
+          </form>
+
+          {searchResults.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-xs text-gray-400 mb-1">Top Results:</div>
+              {searchResults.map((result: any) => (
+                <button
+                  key={result.identifier}
+                  type="button"
+                  onClick={() => executeCommand(`Data.fetchPDB('${result.identifier}')`)}
+                  className="w-full text-left px-3 py-2 bg-gray-800 hover:bg-indigo-900 border border-gray-700 rounded text-sm text-white transition-colors flex justify-between items-center"
+                >
+                  <span className="font-mono font-bold text-indigo-300">{result.identifier}</span>
+                  <span className="text-xs text-gray-400">Load →</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <button
           onClick={handleLoadBioData}
           className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors font-semibold"
@@ -223,11 +324,11 @@ export default function DataPanel() {
       )}
 
       {/* Empty State */}
-      {!currentData && (
+      {!hasData && (
         <div className="text-center py-8 text-gray-500 text-sm">
           <div className="text-4xl mb-2">📂</div>
           <div>No data loaded</div>
-          <div className="text-xs mt-1">Load bio-sequence data to get started</div>
+          <div className="text-xs mt-1">Load bio-sequence or PDB data to get started</div>
         </div>
       )}
     </div>

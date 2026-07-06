@@ -40,6 +40,12 @@ export interface CommandState {
   lastError: string | null
   commandCount: number
   frameTrigger: number
+
+  // PDB Data
+  backbone: any[]
+  ligands: any[]
+  edges: any[]
+  isLoadingPDB: boolean
 }
 
 /**
